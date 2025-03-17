@@ -30,6 +30,7 @@ dependencies = [
     "pyjwt>=2.10.1",
     "sparqlwrapper>=2.0.0",
     "wikibaseintegrator>=0.12.12",
+    "pytest-cov>=6.0.0",
 ]
 
 [dependency-groups]
@@ -76,53 +77,6 @@ ignore = [
 # Like Black, automatically detect the appropriate line ending
 line-ending = "auto"
 
-[tool.tox]
-legacy_tox_ini = """
-    [tox]
-    env_list = lint, type, py{312, 313}
-    minversion = 4.15.0
-
-    [testenv]
-    description = run the tests with pytest
-    deps =.[dev]
-    package = wheel
-    wheel_build_env = .pkg
-    allowlist_externals =
-        scripts/*
-        coverage
-        pytest
-    commands =
-        pytest --junitxml=report.xml {tty:--color=yes} {posargs}
-
-    [testenv:coverage]
-    description = run terst coverage
-    deps =
-        .[dev]
-    commands =
-        pytest --cov --cov-report=xml:coverage-reports/coverage.xml --cov-config=pyproject.toml --cov-branch {tty:--color=yes} {posargs}
-
-    [testenv:format]
-    description = install ruff and format the project code
-    deps =
-        ruff
-    commands =
-        ruff format
-
-    [testenv:lint]
-    description = run linters
-    skip_install = true
-    deps =
-        ruff
-    commands =
-        ruff check --fix
-
-    [testenv:type]
-    description = run type checks
-    deps =
-        mypy>=1.1
-    commands =
-        mypy  {posargs:src/ceur_graph}
-"""
 [tool.mypy]
 follow_imports = "skip"
 strict_optional = true
