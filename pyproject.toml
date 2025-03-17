@@ -90,6 +90,7 @@ legacy_tox_ini = """
     allowlist_externals =
         scripts/*
         coverage
+        pytest
     commands =
         pytest --junitxml=report.xml {tty:--color=yes} {posargs}
 
