@@ -19,7 +19,7 @@ class VolumeBase(EntityBase):
     """
 
     title: Annotated[
-        str | None,
+        str,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/direct/P5",
@@ -27,97 +27,97 @@ class VolumeBase(EntityBase):
                 WIKIBASE_TYPE: datatypes.MonolingualText.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     short_name: Annotated[
-        str | None,
+        str,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/direct/P11",
                 WIKIBASE_TYPE: datatypes.MonolingualText.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     dblp_publication_id: Annotated[
-        str | None,
+        str,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/direct/P9",
                 WIKIBASE_TYPE: datatypes.ExternalID.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     copyright_license: Annotated[
-        str | None,
+        str,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/direct/P96",
                 WIKIBASE_TYPE: datatypes.Item.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     wikidata_id: Annotated[
-        str | None,
+        str,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/direct/P2",
                 WIKIBASE_TYPE: datatypes.ExternalID.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     language_of_work: Annotated[
-        str | None,
+        str,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/direct/P14",
                 WIKIBASE_TYPE: datatypes.Item.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     urn: Annotated[
-        str | None,
+        str,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/direct/P7",
                 WIKIBASE_TYPE: datatypes.ExternalID.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     is_proceedings_from: Annotated[
-        list[str] | None,
+        list[str],
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/direct/P16",
                 WIKIBASE_TYPE: datatypes.Item.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     full_work_available_at_url: Annotated[
-        AnyHttpUrl | None,
+        AnyHttpUrl,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/direct/P12",
                 WIKIBASE_TYPE: datatypes.URL.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     volume: Annotated[
-        int | None,
+        int,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/direct/P17",
                 WIKIBASE_TYPE: datatypes.String.DTYPE,
             },
         ),
-    ] = None
+    ] = None  # type: ignore
     part_of_the_series: Annotated[
-        str | None,
+        str,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/direct/P15",
                 WIKIBASE_TYPE: datatypes.Item.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
 
 
 class VolumeCreate(VolumeBase):

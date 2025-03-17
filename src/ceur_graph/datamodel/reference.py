@@ -30,25 +30,25 @@ class ReferenceBase(ExtractedStatement):
         ),
     ] = WikibaseSnakType.UNKNOWN_VALUE.value
     series_ordinal: Annotated[
-        int | None,
+        int,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P18",
                 WIKIBASE_TYPE: datatypes.String.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     doi: Annotated[
-        str | None,
+        str,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P29",
                 WIKIBASE_TYPE: datatypes.ExternalID.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     title: Annotated[
-        str | None,
+        str,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P5",
@@ -56,34 +56,34 @@ class ReferenceBase(ExtractedStatement):
                 WIKIBASE_TYPE: datatypes.MonolingualText.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     author_name_string: Annotated[
-        list[str] | None,
+        list[str],
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P92",
                 WIKIBASE_TYPE: datatypes.String.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     author: Annotated[
-        list[str] | None,
+        list[str],
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P93",
                 WIKIBASE_TYPE: datatypes.Item.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     described_at_url: Annotated[
-        AnyHttpUrl | None,
+        AnyHttpUrl,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P8",
                 WIKIBASE_TYPE: datatypes.URL.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
 
 
 class ReferenceCreate(ReferenceBase):

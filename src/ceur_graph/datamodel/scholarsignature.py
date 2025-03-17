@@ -25,16 +25,16 @@ class ScholarSignatureBase(ExtractedStatement):
         ),
     ] = WikibaseSnakType.UNKNOWN_VALUE.value
     series_ordinal: Annotated[
-        int | None,
+        int,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P18",
                 WIKIBASE_TYPE: datatypes.String.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     orcid_id: Annotated[
-        str | None,
+        str,
         Field(
             pattern=r"\d{4}-\d{4}-\d{4}-\d{3}[\dX]",
             json_schema_extra={
@@ -42,34 +42,34 @@ class ScholarSignatureBase(ExtractedStatement):
                 WIKIBASE_TYPE: datatypes.ExternalID.DTYPE,
             },
         ),
-    ] = None
+    ] = None  # type: ignore
     affiliation_string: Annotated[
-        list[str] | None,
+        list[str],
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P19",
                 WIKIBASE_TYPE: datatypes.String.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     affiliation: Annotated[
-        list[str] | None,
+        list[str],
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P20",
                 WIKIBASE_TYPE: datatypes.Item.DTYPE,
             }
         ),
-    ] = None
+    ] = None  # type: ignore
     dblp_author_id: Annotated[
-        str | None,
+        str,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P88",
                 WIKIBASE_TYPE: datatypes.ExternalID.DTYPE,
             },
         ),
-    ] = None
+    ] = None  # type: ignore
 
 
 class ScholarSignatureCreate(ScholarSignatureBase):
