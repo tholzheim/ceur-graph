@@ -5,13 +5,13 @@ from string import Template
 
 import requests
 from pydantic import AnyHttpUrl
-from test.settings import Settings
 from wikibaseintegrator import datatypes
 from wikibaseintegrator.entities import ItemEntity
 
 from ceur_graph.ceur_dev import CeurDev
 from ceur_graph.datamodel.auth import WikibaseBotAuth
 from ceur_graph.datamodel.paper import Paper
+from test.settings import Settings
 
 
 class TestPaperCreation(unittest.TestCase):
