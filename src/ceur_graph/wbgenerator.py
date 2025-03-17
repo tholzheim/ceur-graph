@@ -185,7 +185,7 @@ def get_model_from_item(item: ItemEntity, model: type[BaseModel]) -> BaseModel:
     field_metadata: FieldInfo
     record = {}
     for field_name, field_metadata in model.model_fields.items():
-        field_type = field_metadata.json_schema_extra.get(WIKIBASE_TYPE)
+        # field_type = field_metadata.json_schema_extra.get(WIKIBASE_TYPE)
         field_prop_id = field_metadata.json_schema_extra.get(CEUR_DEV_ID)
         field_value = None
         if field_prop_id == "rdf:subject":
