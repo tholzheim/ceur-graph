@@ -5,7 +5,7 @@ from string import Template
 
 import requests
 from pydantic import AnyHttpUrl
-from settings import Settings
+from test.settings import Settings
 from wikibaseintegrator import datatypes
 from wikibaseintegrator.entities import ItemEntity
 
