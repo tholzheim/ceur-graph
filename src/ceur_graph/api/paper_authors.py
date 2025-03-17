@@ -16,6 +16,7 @@ from ceur_graph.api.utils import (
 from ceur_graph.ceur_dev import CeurDev
 from ceur_graph.datamodel.scholarsignature import (
     ScholarSignature,
+    ScholarSignatureBase,
     ScholarSignatureCreate,
     ScholarSignatureUpdate,
 )
@@ -89,7 +90,7 @@ async def delete_paper_author(
         wikibase=ceur_dev,
         item_id=paper_id,
         object_named_as=object_named_as,
-        model=ScholarSignature,
+        model=ScholarSignatureBase,
     )
 
 
