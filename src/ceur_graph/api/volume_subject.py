@@ -78,7 +78,7 @@ def delete_subject_by_statement_id(
 
 
 @router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
-def delete_subject_by_statement_id(
+def delete_subject_by_object_named_as(
     volume_id: Annotated[str, Field(pattern=r"Q\d+")],
     object_named_as: str,
     ceur_dev: Annotated[CeurDev, Depends(get_current_user)],
