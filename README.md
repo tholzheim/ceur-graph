@@ -1,3 +1,6 @@
+![GitHub](https://img.shields.io/github/license/tholzheim/ceur-graph)
+![Python Version](https://img.shields.io/badge/python-3.12%2B-blue.svg)
+![Development Status](https://img.shields.io/badge/status-beta-yellowgreen.svg)
 # CEUR-Graph
 CEUR-Graph is a Python library that provides a RESTful API for adding CEUR-WS data into the CEUR-dev Wikibase instance. This instance functions as a semantification target for CEUR-WS and is synchronized with Wikidata.
 ## Features
@@ -34,9 +37,6 @@ docker compose down
 ```
 
 
-## Authors
-
-This project is maintained by Tim Holzheim (tholzheim) [holzheim@dbis.rwth-aachen.de].
 ## License
 
 This project is licensed under the [Apache License, Version 2.0](./LICENSE).
