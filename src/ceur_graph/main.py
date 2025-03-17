@@ -1,5 +1,7 @@
+import logging
 from typing import Annotated
 
+import uvicorn
 from fastapi import Depends, FastAPI
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -13,6 +15,8 @@ from ceur_graph.api import (
     volume_subject,
     volume_editors,
 )
+
+logging.basicConfig(level=logging.DEBUG)
 
 app = FastAPI()
 app.include_router(papers.router)
@@ -32,3 +36,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
 @app.get("/volumes/{volume_number}/papers")
 def get_volume_papers(volume_number: int):
     return {"volume_number": volume_number}
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
