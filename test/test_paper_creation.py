@@ -11,16 +11,23 @@ from wikibaseintegrator.entities import ItemEntity
 from ceur_graph.ceur_dev import CeurDev
 from ceur_graph.datamodel.auth import WikibaseBotAuth
 from ceur_graph.datamodel.paper import Paper
+from settings import Settings
 
 
 class TestPaperCreation(unittest.TestCase):
     def setUp(self):
+        settings = Settings()
         auth = WikibaseBotAuth(
-            user="", password=""
+            user=settings.WIKIBASE_BOT_USERNAME, password=settings.WIKIBASE_BOT_PASSWORD
         )
         self.ceur_dev = CeurDev(auth)
 
     def get_volume_paper_records(self, volume_number: int) -> list[dict]:
+        """
+        Get paper records for a given volume number.
+        :param volume_number: volume number
+        :return: list of paper records
+        """
         endpoint_url = Template(
             "https://ceurspt.wikidata.dbis.rwth-aachen.de/volume/$volume_number/paper"
         )
@@ -29,6 +36,12 @@ class TestPaperCreation(unittest.TestCase):
         return response.json()
 
     def prepare_paper(self, record: dict, published_in: str) -> Paper | None:
+        """
+        Prepare the paper object by converting the given paper record into a paper object.
+        :param record: paper record
+        :param published_in: Qid of the proceedings the paper was published in
+        :return: Paper
+        """
         volume_number = record.get("spt.volume", {}).get("number")
         title = record.get("spt.title")
 
@@ -63,6 +76,11 @@ class TestPaperCreation(unittest.TestCase):
             return paper
 
     def create_paper_item(self, paper: Paper) -> ItemEntity:
+        """
+        Creates a ItemEntity from the given paper object.
+        :param paper: paper object
+        :return: ItemEntity
+        """
         item: ItemEntity = self.ceur_dev.wbi.item.new()
         item.labels.set("en", paper.label)
         item.descriptions.set("en", paper.description)
@@ -93,6 +111,11 @@ class TestPaperCreation(unittest.TestCase):
         return item
 
     def create_volume_papers(self, volume_number: int):
+        """
+        For the given volume number, create the paper entries in ceur-dev
+        :param volume_number: volume number
+        :return: None
+        """
         paper_records = self.get_volume_paper_records(volume_number)
         if isinstance(paper_records, dict):
             print(f"Volume {volume_number} does not exist")
@@ -113,6 +136,12 @@ class TestPaperCreation(unittest.TestCase):
             self.ceur_dev.write_item(paper_item)
 
     def paper_exists(self, paper: Paper) -> bool:
+        """
+        Check if the given paper exists in the ceur-dev database.
+        The paper pdf id is used for the existence check
+        :param paper: Paper to check
+        :return: True if the paper exists in the ceur-dev database. Otherwise False
+        """
         query_template = Template("""
         PREFIX wdt: <https://ceur-dev.wikibase.cloud/prop/direct/>
         PREFIX wd: <https://ceur-dev.wikibase.cloud/entity/>
@@ -126,31 +155,23 @@ class TestPaperCreation(unittest.TestCase):
         )
         return item_exists
 
-    def test_something(self):
+    @unittest.skip("For manual use")
+    def test_creation_of_volume_range(self):
         for volume_number in range(3497, 3500):
             print(volume_number)
             self.create_volume_papers(volume_number)
 
-    def test_something2(self):
+    @unittest.skip("For manual use")
+    def test_creation_of_specific_volume(self):
         self.create_volume_papers(3500)
 
-    def test_something3(self):
-        print("test_something3")
+    @unittest.skip("For manual use")
+    def test_login_credentials(self):
+        """
+        test login with the credentials
+        """
         self.ceur_dev.get_wbi_login()
         self.assertTrue(True)
-
-    def test_paper(self):
-        paper = Paper(
-            qid="Q5",
-            **{
-                "label": "Test Paper",
-                "description": "string",
-                "published_in": "Q5",
-                "full_work_available_at_url": "https://example.com/",
-                "title": "string",
-            },
-        )
-        print(Paper.model_fields)
 
 
 if __name__ == "__main__":
