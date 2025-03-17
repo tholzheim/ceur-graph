@@ -1,0 +1,8 @@
+services:
+  dcm:
+    container_name: ceur-graph
+    build:
+      context: ./
+    ports:
+      - 9090:8000
+
