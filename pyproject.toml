@@ -79,7 +79,7 @@ line-ending = "auto"
 [tool.tox]
 legacy_tox_ini = """
     [tox]
-    env_list = lint, type, py{310,311,312}
+    env_list = lint, type, py{312, 313}
     minversion = 4.15.0
 
     [testenv]
