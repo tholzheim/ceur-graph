@@ -10,6 +10,18 @@ license = "Apache-2.0"
 authors = [
     { name = "tholzheim", email = "tim.holzheim@rwth-aachen.de" }
 ]
+classifiers=[
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License"
+    ]
 requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard]>=0.115.11",
@@ -24,19 +36,107 @@ dependencies = [
 dev = [
     "pytest>=8.3.4",
     "ruff>=0.9.7",
+    "tox>=4.24.2",
 ]
 
 
-classifiers=[
-    "Development Status :: 4 - Beta",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Operating System :: OS Independent",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Intended Audience :: Developers",
-    "Intended Audience :: Education",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License"
-    ]
-dynamic = [ "description"]
+
+
+
+[tool.ruff]
+# Set the maximum line length to 79.
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
+ignore = [
+    # if-else-block-instead-of-if-exp
+    "SIM108",
+    # nested with statements (not working correctly with nicegui)
+    "SIM117"
+]
+# Allow fix for all enabled rules (when `--fix`) is provided.
+#fixable = ["ALL"]
+
+
+[tool.ruff.format]
+# Like Black, automatically detect the appropriate line ending
+line-ending = "auto"
+
+[tool.tox]
+legacy_tox_ini = """
+    [tox]
+    env_list = lint, type, py{310,311,312}
+    minversion = 4.15.0
+
+    [testenv]
+    description = run the tests with pytest
+    deps =.[test]
+    package = wheel
+    wheel_build_env = .pkg
+    allowlist_externals =
+        scripts/*
+        coverage
+    commands =
+        pytest --junitxml=report.xml {tty:--color=yes} {posargs}
+
+    [testenv:coverage]
+    description = run terst coverage
+    deps =
+        .[test]
+    commands =
+        pytest --cov --cov-report=xml:coverage-reports/coverage.xml --cov-config=pyproject.toml --cov-branch {tty:--color=yes} {posargs}
+
+    [testenv:format]
+    description = install ruff and format the project code
+    deps =
+        ruff
+    commands =
+        ruff format
+
+    [testenv:lint]
+    description = run linters
+    skip_install = true
+    deps =
+        ruff
+    commands =
+        ruff check --fix
+
+    [testenv:type]
+    description = run type checks
+    deps =
+        mypy>=1.1
+    commands =
+        mypy  {posargs:src/ceur_graph}
+"""
+[tool.mypy]
+follow_imports = "skip"
+strict_optional = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["yaml","dateutil.parser", "dateutil", "tabulate", "requests"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = [
+    "tests",
+]
+pythonpath = [
+  "src"
+]
+asyncio_mode = "auto"
