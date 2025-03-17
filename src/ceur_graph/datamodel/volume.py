@@ -84,7 +84,7 @@ class VolumeBase(EntityBase):
         ),
     ] = None
     is_proceedings_from: Annotated[
-        list[str],
+        list[str] | None,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/direct/P16",

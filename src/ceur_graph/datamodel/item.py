@@ -19,7 +19,7 @@ class ItemBase(BaseModel):
         str | None,
         Field(
             description="Qid of the paper",
-            pattern="Q\d+",
+            pattern=r"Q\d+",
             json_schema_extra={CEUR_DEV_ID: "rdf:subject"},
         ),
     ]
@@ -49,6 +49,8 @@ class StatementBase(BaseModel):
                 if len(id_parts) > 2 and id_parts[-2] == "statement":
                     subject_field = field_name
                     break
+        if subject_field is None:
+            raise Exception(f"Model {cls.__name__} has no statement object defined for {lookup_key}")
         return subject_field
 
     @classmethod
@@ -72,7 +74,7 @@ class StatementBase(BaseModel):
 
 class Statement(StatementBase):
     statement_id: Annotated[
-        str, Field(pattern="Q\d+", json_schema_extra={CEUR_DEV_ID: "rdf:subject"})
+        str, Field(pattern=r"Q\d+", json_schema_extra={CEUR_DEV_ID: "rdf:subject"})
     ]
 
 
@@ -83,7 +85,7 @@ class ExtractedStatement(StatementBase):
     """
 
     object_named_as: Annotated[
-        str,
+        str | None,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P91",

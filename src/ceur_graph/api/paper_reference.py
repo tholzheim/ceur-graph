@@ -79,7 +79,7 @@ def update_paper_reference(
     paper_id: Annotated[str, Field(pattern=r"Q\d+")],
     statement_id: str,
     ceur_dev: Annotated[CeurDev, Depends(get_current_user)],
-    reference: ReferenceUpdate,
+    reference: ReferenceUpdate,# type: ignore
 ):
     """
     Update paper reference

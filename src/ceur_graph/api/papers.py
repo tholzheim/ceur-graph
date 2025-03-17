@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Optional
 from fastapi import APIRouter, Body, Depends
 from pydantic import Field
 from starlette import status
@@ -48,7 +48,7 @@ async def get_paper(paper_id: str):
 @router.put("/{paper_id}", response_model=Paper, status_code=status.HTTP_200_OK)
 async def update_paper(
     paper_id: Annotated[str, Field(pattern=r"Q\d+")],
-    paper: Annotated[PaperUpdate, Body(embed=True)],
+    paper: Annotated[PaperUpdate, Body(embed=True)], # type: ignore
     ceur_dev: Annotated[CeurDev, Depends(get_current_user)],
 ):
     return handle_item_update(
@@ -63,7 +63,7 @@ async def update_paper(
 async def delete_paper(
     paper_id: str,
     ceur_dev: Annotated[CeurDev, Depends(get_current_user)],
-    reason: Annotated[str, Field(description="Reason for deletion")] = None,
+    reason: Annotated[str | None, Field(description="Reason for deletion")] = None,
 ):
     return handle_item_deletion(
         wikibase=ceur_dev,

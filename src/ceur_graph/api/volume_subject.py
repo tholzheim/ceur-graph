@@ -98,7 +98,7 @@ def delete_subject_by_object_named_as(
 def update_subject(
     volume_id: Annotated[str, Field(pattern=r"Q\d+")],
     ceur_dev: Annotated[CeurDev, Depends(get_current_user)],
-    subject: SubjectUpdate,
+    subject: SubjectUpdate, # type: ignore
     statement_id: str,
 ):
     """

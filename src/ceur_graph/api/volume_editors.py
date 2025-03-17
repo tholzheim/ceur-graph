@@ -99,7 +99,7 @@ async def delete_volume_editor(
 async def update_volume_editor(
     volume_id: Annotated[str, Field(pattern=r"Q\d+")],
     statement_id: str,
-    scholar_signature: Annotated[EditorSignatureUpdate, Body(embed=True)],
+    scholar_signature: Annotated[EditorSignatureUpdate, Body(embed=True)], # type: ignore
     ceur_dev: Annotated[CeurDev, Depends(get_current_user)],
 ):
     """

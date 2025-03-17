@@ -16,8 +16,8 @@ BaseModelT = TypeVar("BaseModelT", bound=BaseModel)
 
 
 def make_partial_model(
-    model: Type[BaseModelT], model_name: str | None = None
-) -> Type[BaseModelT]:
+    model: type[BaseModelT], model_name: str | None = None
+) -> type[BaseModelT]:
     if model_name is None:
         model_name = f"Partial{model.__name__}"
     return create_model(  # type: ignore

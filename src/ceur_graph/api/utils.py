@@ -51,8 +51,8 @@ def handle_get_item_by_id(
 def handle_item_deletion(
     wikibase: Wikibase,
     item_id: str,
-    reason: str = None,
-    target_model: type[ItemBase] = None,
+    target_model: type[ItemBase],
+    reason: str | None = None,
 ):
     """
     Handle item deletion
@@ -63,9 +63,11 @@ def handle_item_deletion(
     :return:
     """
     try:
+        logger.debug(f"Deleting item {item_id} of type {get_model_label(target_model)}")
         item = wikibase.get_item(item_id)
         wikibase.delete_entity(item, reason=reason)
     except Exception as e:
+        logger.debug(f"Failed to delete item {item_id} of type {get_model_label(target_model)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )

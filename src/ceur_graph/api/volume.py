@@ -51,7 +51,7 @@ async def get_volume(volume_id: str):
 @router.put("/{volume_id}", response_model=Volume, status_code=status.HTTP_200_OK)
 async def update_volume(
     volume_id: Annotated[str, Field(pattern=r"Q\d+")],
-    volume: Annotated[VolumeUpdate, Body(embed=True)],
+    volume: Annotated[VolumeUpdate, Body(embed=True)], # type: ignore
     ceur_dev: Annotated[CeurDev, Depends(get_current_user)],
 ):
     """
@@ -69,7 +69,7 @@ async def update_volume(
 async def delete_volume(
     volume_id: str,
     ceur_dev: Annotated[CeurDev, Depends(get_current_user)],
-    reason: Annotated[str, Field(description="Reason for deletion")] = None,
+    reason: Annotated[str | None, Field(description="Reason for deletion")] = None,
 ):
     """
     Delete volume data by id.

@@ -99,7 +99,7 @@ async def delete_paper_author(
 async def update_paper_author(
     paper_id: Annotated[str, Field(pattern=r"Q\d+")],
     statement_id: str,
-    scholar_signature: Annotated[ScholarSignatureUpdate, Body(embed=True)],
+    scholar_signature: Annotated[ScholarSignatureUpdate, Body(embed=True)], # type: ignore
     ceur_dev: Annotated[CeurDev, Depends(get_current_user)],
 ):
     """

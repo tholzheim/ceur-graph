@@ -30,7 +30,7 @@ class ReferenceBase(ExtractedStatement):
         ),
     ] = WikibaseSnakType.UNKNOWN_VALUE.value
     series_ordinal: Annotated[
-        int,
+        int | None,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P18",
@@ -39,7 +39,7 @@ class ReferenceBase(ExtractedStatement):
         ),
     ] = None
     doi: Annotated[
-        str,
+        str | None,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P29",
@@ -58,7 +58,7 @@ class ReferenceBase(ExtractedStatement):
         ),
     ] = None
     author_name_string: Annotated[
-        list[str],
+        list[str] | None,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P92",
@@ -67,7 +67,7 @@ class ReferenceBase(ExtractedStatement):
         ),
     ] = None
     author: Annotated[
-        list[str],
+        list[str] | None,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P93",
@@ -76,7 +76,7 @@ class ReferenceBase(ExtractedStatement):
         ),
     ] = None
     described_at_url: Annotated[
-        AnyHttpUrl,
+        AnyHttpUrl | None,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P8",

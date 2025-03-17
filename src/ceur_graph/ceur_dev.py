@@ -47,6 +47,9 @@ class CeurDev(Wikibase):
         :return:
         """
         query = self.get_proceedings_by_volume_number_query(volume_id)
+        if query is None:
+            logger.debug(f"Unable to get proceedings by volume number: {volume_id} as the query could not be generated")
+            return None
         qres = self.execute_query(query, self.sparql_endpoint)
         if len(qres) == 0:
             return None

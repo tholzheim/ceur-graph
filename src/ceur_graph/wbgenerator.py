@@ -298,7 +298,7 @@ def add_statement_from_model(item: ItemEntity, model: StatementBase):
 def get_item_statement_by_model(
     item: ItemEntity,
     model: StatementBase,
-    target_model: type[StatementBase | Statement] = None,
+    target_model: type[StatementBase | Statement] | None = None,
 ) -> StatementBase | Statement | None:
     """
     Get statement id from given item or None if the model is not a claim of the item

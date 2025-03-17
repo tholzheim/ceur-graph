@@ -25,7 +25,7 @@ class ScholarSignatureBase(ExtractedStatement):
         ),
     ] = WikibaseSnakType.UNKNOWN_VALUE.value
     series_ordinal: Annotated[
-        int,
+        int | None,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P18",
@@ -34,7 +34,7 @@ class ScholarSignatureBase(ExtractedStatement):
         ),
     ] = None
     orcid_id: Annotated[
-        str,
+        str | None,
         Field(
             pattern=r"\d{4}-\d{4}-\d{4}-\d{3}[\dX]",
             json_schema_extra={
@@ -44,7 +44,7 @@ class ScholarSignatureBase(ExtractedStatement):
         ),
     ] = None
     affiliation_string: Annotated[
-        list[str],
+        list[str] | None,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P19",
@@ -53,7 +53,7 @@ class ScholarSignatureBase(ExtractedStatement):
         ),
     ] = None
     affiliation: Annotated[
-        list[str],
+        list[str] | None,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P20",
@@ -62,7 +62,7 @@ class ScholarSignatureBase(ExtractedStatement):
         ),
     ] = None
     dblp_author_id: Annotated[
-        str,
+        str | None,
         Field(
             json_schema_extra={
                 CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P88",
@@ -78,7 +78,7 @@ class ScholarSignatureCreate(ScholarSignatureBase):
     """
 
 
-ScholarSignatureUpdate = make_partial_model(
+ScholarSignatureUpdate: type = make_partial_model(
     ScholarSignatureCreate, "ScholarSignatureUpdate"
 )
 
