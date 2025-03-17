@@ -8,7 +8,6 @@ class TestCeurDev(TestCase):
         volume_number = 3658
         actual_query = CeurDev.get_proceedings_by_volume_number_query(volume_number)
         self.assertIn(str(volume_number), actual_query)
-        print(actual_query)
 
     def test_get_proceedings_by_volume_number(self):
         volume_number = 3658
