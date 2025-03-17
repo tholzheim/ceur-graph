@@ -84,7 +84,7 @@ legacy_tox_ini = """
 
     [testenv]
     description = run the tests with pytest
-    deps =.[test]
+    deps =.[dev]
     package = wheel
     wheel_build_env = .pkg
     allowlist_externals =
@@ -97,7 +97,7 @@ legacy_tox_ini = """
     [testenv:coverage]
     description = run terst coverage
     deps =
-        .[test]
+        .[dev]
     commands =
         pytest --cov --cov-report=xml:coverage-reports/coverage.xml --cov-config=pyproject.toml --cov-branch {tty:--color=yes} {posargs}
 
