@@ -5,16 +5,16 @@ import uvicorn
 from fastapi import Depends, FastAPI
 from fastapi.security import OAuth2PasswordRequestForm
 
-from ceur_graph.api.auth import login_user
 from ceur_graph.api import (
-    papers,
     paper_authors,
-    paper_subject,
     paper_reference,
+    paper_subject,
+    papers,
     volume,
-    volume_subject,
     volume_editors,
+    volume_subject,
 )
+from ceur_graph.api.auth import login_user
 
 logging.basicConfig(level=logging.DEBUG)
 

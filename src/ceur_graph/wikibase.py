@@ -78,9 +78,7 @@ class Wikibase(BaseModel):
             for item_id_chunk in cls.chunks(values, chunk_size):
                 source_items = "\n".join(item_id_chunk)
                 query = query_template.substitute(**{param_name: source_items})
-                logger.debug(
-                    f"Querying chunk of size {len(item_id_chunk)} labels from {endpoint_url}"
-                )
+                logger.debug(f"Querying chunk of size {len(item_id_chunk)} labels from {endpoint_url}")
                 future = executor.submit(
                     cls.execute_query,
                     query=query,
@@ -99,13 +97,9 @@ class Wikibase(BaseModel):
         :param endpoint_url:
         :return:
         """
-        query_first_line = (
-            query.split("\n")[0][:30] if query.strip().startswith("#") else ""
-        )
+        query_first_line = query.split("\n")[0][:30] if query.strip().startswith("#") else ""
         query_hash = hashlib.sha512(query.encode("utf-8")).hexdigest()
-        logger.debug(
-            f"Executing SPARQL query {query_first_line} ({query_hash}) against {endpoint_url}"
-        )
+        logger.debug(f"Executing SPARQL query {query_first_line} ({query_hash}) against {endpoint_url}")
         start = datetime.now()
         sparql = SPARQLWrapper(
             endpoint_url.unicode_string(),
@@ -197,9 +191,7 @@ class Wikibase(BaseModel):
         """)
         if language is None:
             language = "en"
-        query_template = Template(
-            query_raw.safe_substitute(language=language, item_prefix=self.item_prefix)
-        )
+        query_template = Template(query_raw.safe_substitute(language=language, item_prefix=self.item_prefix))
         values = [f"<{entity_id}>" for entity_id in entity_ids]
         lod = self.execute_values_query_in_chunks(
             query_template=query_template,
@@ -318,9 +310,7 @@ class Wikibase(BaseModel):
         """
         return entity_url.split("/")[-1]
 
-    def get_items_modified_at(
-        self, start_date: datetime | date, end_date: datetime | date | None = None
-    ) -> set[str]:
+    def get_items_modified_at(self, start_date: datetime | date, end_date: datetime | date | None = None) -> set[str]:
         """Get items modified at a date range
         :param start_date:
         :param end_date:
@@ -336,9 +326,7 @@ class Wikibase(BaseModel):
         """)
         if end_date is None:
             end_date = start_date + timedelta(days=1)
-        query = query_template.substitute(
-            start_date=start_date.isoformat(), end_date=end_date.isoformat()
-        )
+        query = query_template.substitute(start_date=start_date.isoformat(), end_date=end_date.isoformat())
         lod = self.execute_query(query, self.sparql_endpoint)
         return {d.get("item", "") for d in lod if isinstance(d.get("item"), str)}
 
@@ -362,10 +350,7 @@ class Wikibase(BaseModel):
         :param snak:
         :return:
         """
-        if (
-            snak.datatype == "globe-coordinate"
-            and snak.datavalue.get("value", {}).get("precision") is None
-        ):
+        if snak.datatype == "globe-coordinate" and snak.datavalue.get("value", {}).get("precision") is None:
             # https://github.com/wikimedia/Wikibase/blob/174450de8fdeabcf97287604dbbf04d07bb5000c/repo/includes/Rdf/Values/GlobeCoordinateRdfBuilder.php#L120
             snak.datavalue["value"]["precision"] = 1 / 3600
 

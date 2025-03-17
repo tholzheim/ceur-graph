@@ -6,10 +6,10 @@ from wikibaseintegrator.wbi_enums import WikibaseSnakType
 
 from ceur_graph.datamodel.item import (
     CEUR_DEV_ID,
+    WIKIBASE_TYPE,
     ExtractedStatement,
     ItemStatementSubjectType,
     Statement,
-    WIKIBASE_TYPE,
 )
 from ceur_graph.datamodel.utils import make_partial_model
 
@@ -78,9 +78,7 @@ class ScholarSignatureCreate(ScholarSignatureBase):
     """
 
 
-ScholarSignatureUpdate: type = make_partial_model(
-    ScholarSignatureCreate, "ScholarSignatureUpdate"
-)
+ScholarSignatureUpdate: type = make_partial_model(ScholarSignatureCreate, "ScholarSignatureUpdate")
 
 
 class ScholarSignature(ScholarSignatureBase, Statement):

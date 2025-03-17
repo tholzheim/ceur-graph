@@ -1,6 +1,6 @@
 from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, constr, Field, model_validator
+from pydantic import BaseModel, Field, constr, model_validator
 from pydantic.fields import FieldInfo
 from wikibaseintegrator import datatypes
 from wikibaseintegrator.wbi_enums import WikibaseSnakType
@@ -27,9 +27,7 @@ class ItemBase(BaseModel):
 
 class EntityBase(BaseModel):
     label: Annotated[str, Field(json_schema_extra={CEUR_DEV_ID: "rdfs:label"})]
-    description: Annotated[
-        str, Field(json_schema_extra={CEUR_DEV_ID: "schema:description"})
-    ]
+    description: Annotated[str, Field(json_schema_extra={CEUR_DEV_ID: "schema:description"})]
 
 
 class StatementBase(BaseModel):
@@ -73,9 +71,7 @@ class StatementBase(BaseModel):
 
 
 class Statement(StatementBase):
-    statement_id: Annotated[
-        str, Field(pattern=r"Q\d+", json_schema_extra={CEUR_DEV_ID: "rdf:subject"})
-    ]
+    statement_id: Annotated[str, Field(pattern=r"Q\d+", json_schema_extra={CEUR_DEV_ID: "rdf:subject"})]
 
 
 class ExtractedStatement(StatementBase):
@@ -101,12 +97,10 @@ class ExtractedStatement(StatementBase):
         """
         statement_object_field = self.get_statement_subject(CEUR_DEV_ID)
         statement_object_value = getattr(self, statement_object_field)
-        if (
-            statement_object_value == WikibaseSnakType.UNKNOWN_VALUE.value
-            and self.object_named_as is None
-        ):
+        if statement_object_value == WikibaseSnakType.UNKNOWN_VALUE.value and self.object_named_as is None:
             raise ValueError(
-                f"If the statement object field {statement_object_field} is set as unknown value the object_named_as field must be set."
+                f"If the statement object field {statement_object_field} is set as unknown value the object_named_as "
+                f"field must be set."
             )
         return self
 
@@ -114,14 +108,9 @@ class ExtractedStatement(StatementBase):
         other_object_named_as = getattr(other, "object_named_as", None)
         if None in [self.object_named_as, other_object_named_as]:
             stmt_object_field = self.get_statement_subject(CEUR_DEV_ID)
-            if getattr(self, stmt_object_field) == getattr(other, stmt_object_field):
-                return True
-            else:
-                return False
-        elif self.object_named_as == other_object_named_as:
-            return True
+            return getattr(self, stmt_object_field) == getattr(other, stmt_object_field)
         else:
-            return False
+            return self.object_named_as == other_object_named_as
 
 
 ItemStatementSubjectType = Literal["somevalue"] | constr(pattern=r"^Q\d+$")

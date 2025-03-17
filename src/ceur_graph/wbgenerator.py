@@ -1,9 +1,9 @@
 import logging
-from typing import Any, get_origin, TypeVar
+from typing import Any, TypeVar, get_origin
 
 from pydantic import AnyHttpUrl, BaseModel
 from pydantic.fields import FieldInfo
-from wikibaseintegrator import datatypes, WikibaseIntegrator
+from wikibaseintegrator import WikibaseIntegrator, datatypes
 from wikibaseintegrator.datatypes import BaseDataType
 from wikibaseintegrator.entities import ItemEntity
 from wikibaseintegrator.models import Claim, Snak
@@ -11,14 +11,13 @@ from wikibaseintegrator.wbi_enums import ActionIfExists, WikibaseSnakType
 
 from ceur_graph.datamodel.item import (
     CEUR_DEV_ID,
+    WIKIBASE_TYPE,
     Coordinate,
     ExtractedStatement,
-    StatementBase,
     Statement,
-    WIKIBASE_TYPE,
+    StatementBase,
 )
 from ceur_graph.wikibase import Wikibase
-
 
 logger = logging.getLogger(__name__)
 
@@ -109,9 +108,7 @@ def update_item_from_model(model: BaseModel, item: ItemEntity):
                 item.claims.add(claims)
 
 
-def get_claim(
-    prop_id: str, datatype: str, value: Any, language: str | None = None
-) -> Claim | None:
+def get_claim(prop_id: str, datatype: str, value: Any, language: str | None = None) -> Claim | None:
     """
     Get claim
     :param prop_id:
@@ -128,9 +125,7 @@ def get_claim(
     claim = None
     match datatype:
         case datatypes.MonolingualText.DTYPE:
-            claim = datatypes.MonolingualText(
-                language=language, text=value, prop_nr=prop_nr
-            )
+            claim = datatypes.MonolingualText(language=language, text=value, prop_nr=prop_nr)
         case datatypes.Item.DTYPE:
             claim = datatypes.Item(value=value, prop_nr=prop_nr)
         case datatypes.URL.DTYPE:
@@ -145,13 +140,9 @@ def get_claim(
             claim = datatypes.ExternalID(value=value, prop_nr=prop_nr)
         case datatypes.GlobeCoordinate.DTYPE:
             if isinstance(value, Coordinate):
-                claim = datatypes.GlobeCoordinate(
-                    longitude=value.longitude, latitude=value.latitude, prop_nr=prop_nr
-                )
+                claim = datatypes.GlobeCoordinate(longitude=value.longitude, latitude=value.latitude, prop_nr=prop_nr)
             else:
-                logger.debug(
-                    "Value is not a Coordinate object → ignoring in claim creation"
-                )
+                logger.debug("Value is not a Coordinate object → ignoring in claim creation")
     return claim
 
 
@@ -225,9 +216,7 @@ def get_models_from_qualified_statement(item: ItemEntity, model: type[T]) -> lis
     :return:
     """
     subject_field = model.get_statement_subject(CEUR_DEV_ID)
-    subject_prop_id = model.model_fields.get(subject_field).json_schema_extra.get(
-        CEUR_DEV_ID
-    )
+    subject_prop_id = model.model_fields.get(subject_field).json_schema_extra.get(CEUR_DEV_ID)
     subject_prop_nr = Wikibase.get_entity_id(subject_prop_id)
     claims: list[Claim] = item.claims.get(subject_prop_nr)
     statements: list[StatementBase] = []
@@ -238,9 +227,7 @@ def get_models_from_qualified_statement(item: ItemEntity, model: type[T]) -> lis
     return statements
 
 
-def get_model_from_qualified_statement(
-    claim: Claim, model: type[StatementBase]
-) -> StatementBase | None:
+def get_model_from_qualified_statement(claim: Claim, model: type[StatementBase]) -> StatementBase | None:
     """
     Get model from given claim entity
     :param claim:
@@ -274,7 +261,8 @@ def get_model_from_qualified_statement(
             else:
                 if len(qualifier) > 1:
                     logger.debug(
-                        f"Statement {claim.id} has multiple qualifier values for {field_prop_nr} but the model only supports one value"
+                        f"Statement {claim.id} has multiple qualifier values for {field_prop_nr} but the model only "
+                        f"supports one value"
                     )
                 record[qualifier_field] = get_snak_value(qualifier[0])
     model_obj = model.model_validate(record)
@@ -316,9 +304,7 @@ def get_item_statement_by_model(
     return None
 
 
-def get_item_statement_by_id(
-    item: ItemEntity, statement_id: str, target_model: type[Statement]
-) -> Statement | None:
+def get_item_statement_by_id(item: ItemEntity, statement_id: str, target_model: type[Statement]) -> Statement | None:
     """
     Get model object by statement_id from given item or None if the model is not a claim of the item
     :param item:
@@ -335,22 +321,16 @@ def get_item_statement_by_id(
 
 def create_qualified_statement_from_model(model: StatementBase) -> Claim:
     subject_field = model.get_statement_subject(CEUR_DEV_ID)
-    subject_prop_id = model.model_fields.get(subject_field).json_schema_extra.get(
-        CEUR_DEV_ID
-    )
+    subject_prop_id = model.model_fields.get(subject_field).json_schema_extra.get(CEUR_DEV_ID)
     subject_prop_nr = Wikibase.get_entity_id(subject_prop_id)
     claim: Claim
     print(getattr(model, subject_field))
     if getattr(model, subject_field) == WikibaseSnakType.UNKNOWN_VALUE.value:
-        claim = BaseDataType(
-            prop_nr=subject_prop_nr, snaktype=WikibaseSnakType.UNKNOWN_VALUE
-        )
+        claim = BaseDataType(prop_nr=subject_prop_nr, snaktype=WikibaseSnakType.UNKNOWN_VALUE)
     else:
         claim = get_claim(
             prop_id=subject_prop_nr,
-            datatype=model.model_fields.get(subject_field).json_schema_extra.get(
-                WIKIBASE_TYPE
-            ),
+            datatype=model.model_fields.get(subject_field).json_schema_extra.get(WIKIBASE_TYPE),
             value=getattr(model, subject_field),
         )
     add_qualifier_values_to_statement(claim, model)
@@ -378,18 +358,14 @@ def add_qualifier_values_to_statement(claim: Claim, model: StatementBase):
         else:
             qualifier_values = [getattr(model, qualifier_field)]
         for value in qualifier_values:
-            qualifier = get_claim(
-                prop_id=qualifier_prop_nr, datatype=qualifier_type, value=value
-            )
+            qualifier = get_claim(prop_id=qualifier_prop_nr, datatype=qualifier_type, value=value)
             qualifiers.append(qualifier)
         for snak in qualifiers:
             if snak is not None:
                 claim.qualifiers.add(snak, action_if_exists=ActionIfExists.FORCE_APPEND)
 
 
-def delete_property_statement_by_id(
-    item: ItemEntity, statement_id: str, model_type: type[Statement]
-) -> bool:
+def delete_property_statement_by_id(item: ItemEntity, statement_id: str, model_type: type[Statement]) -> bool:
     """
     Delete statement from given item
     :param item:
@@ -398,9 +374,7 @@ def delete_property_statement_by_id(
     :return: True if the statement was deleted otherwise False if the statement was not found
     """
     subject_field = model_type.get_statement_subject(CEUR_DEV_ID)
-    subject_prop_id = model_type.model_fields.get(subject_field).json_schema_extra.get(
-        CEUR_DEV_ID
-    )
+    subject_prop_id = model_type.model_fields.get(subject_field).json_schema_extra.get(CEUR_DEV_ID)
     subject_prop_nr = Wikibase.get_entity_id(subject_prop_id)
     for claim in item.claims.get(subject_prop_nr):
         if claim.id == statement_id:
@@ -417,9 +391,7 @@ def delete_statement_by_matching_model(item: ItemEntity, model: StatementBase) -
     :return:
     """
     subject_field = model.get_statement_subject(CEUR_DEV_ID)
-    subject_prop_id = model.model_fields.get(subject_field).json_schema_extra.get(
-        CEUR_DEV_ID
-    )
+    subject_prop_id = model.model_fields.get(subject_field).json_schema_extra.get(CEUR_DEV_ID)
     subject_prop_nr = Wikibase.get_entity_id(subject_prop_id)
     for claim in item.claims.get(subject_prop_nr):
         claim_model = get_model_from_qualified_statement(claim, model.__class__)
@@ -442,9 +414,7 @@ def get_calim_by_statement_id(item: ItemEntity, statement_id: str) -> Claim | No
     return None
 
 
-def update_qualified_statement_from_model(
-    item: ItemEntity, statement_id: str, model: StatementBase
-):
+def update_qualified_statement_from_model(item: ItemEntity, statement_id: str, model: StatementBase):
     """
     Update the statement with the given model
     :param statement_id:
@@ -466,9 +436,7 @@ def update_qualified_statement_from_model(
             issubclass(model.__class__, ExtractedStatement)
             and statement_object_value == WikibaseSnakType.UNKNOWN_VALUE.value
         ):
-            new_mainsnak = BaseDataType(
-                prop_nr=statement_prop_nr, snaktype=WikibaseSnakType.UNKNOWN_VALUE
-            )
+            new_mainsnak = BaseDataType(prop_nr=statement_prop_nr, snaktype=WikibaseSnakType.UNKNOWN_VALUE)
         else:
             new_mainsnak = get_claim(
                 prop_id=statement_prop_id,

@@ -1,19 +1,19 @@
 import logging
 from typing import Annotated
+
 from fastapi import APIRouter, Body, Depends
 from pydantic import Field
 from starlette import status
 
 from ceur_graph.api.auth import get_current_user
-
-from ceur_graph.ceur_dev import CeurDev
 from ceur_graph.api.utils import (
-    handle_statement_deletion_by_id,
+    handle_get_all_statements,
     handle_statement_creation,
+    handle_statement_deletion_by_id,
     handle_statement_deletion_by_object,
     handle_statement_update,
-    handle_get_all_statements,
 )
+from ceur_graph.ceur_dev import CeurDev
 from ceur_graph.datamodel.editorsignature import (
     EditorSignature,
     EditorSignatureCreate,
@@ -93,13 +93,11 @@ async def delete_volume_editor(
     )
 
 
-@router.put(
-    "/{statement_id}", response_model=EditorSignature, status_code=status.HTTP_200_OK
-)
+@router.put("/{statement_id}", response_model=EditorSignature, status_code=status.HTTP_200_OK)
 async def update_volume_editor(
     volume_id: Annotated[str, Field(pattern=r"Q\d+")],
     statement_id: str,
-    scholar_signature: Annotated[EditorSignatureUpdate, Body(embed=True)], # type: ignore
+    scholar_signature: Annotated[EditorSignatureUpdate, Body(embed=True)],  # type: ignore
     ceur_dev: Annotated[CeurDev, Depends(get_current_user)],
 ):
     """

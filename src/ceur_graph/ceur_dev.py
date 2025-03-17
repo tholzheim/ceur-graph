@@ -1,10 +1,10 @@
 import logging
+from importlib.resources import files
 from string import Template
 
+import ceur_graph.resources.queries
 from ceur_graph.datamodel.auth import WikibaseAuthorizationConfig
 from ceur_graph.wikibase import Wikibase
-from importlib.resources import files
-import ceur_graph.resources.queries
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +31,7 @@ class CeurDev(Wikibase):
         :param volume_number: volume number
         :return: QID of the volume QID
         """
-        query_str = (
-            files(ceur_graph.resources.queries)
-            .joinpath("ceur-dev_proceedings_by_volume_number.rq")
-            .read_text()
-        )
+        query_str = files(ceur_graph.resources.queries).joinpath("ceur-dev_proceedings_by_volume_number.rq").read_text()
         query_template = Template(query_str)
         query = query_template.safe_substitute({"volume_number": volume_number})
         return query

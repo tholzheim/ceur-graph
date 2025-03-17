@@ -1,14 +1,15 @@
+from typing import Annotated
+
 from pydantic import Field
-from typing_extensions import Annotated
 from wikibaseintegrator import datatypes
 from wikibaseintegrator.wbi_enums import WikibaseSnakType
 
 from ceur_graph.datamodel.item import (
     CEUR_DEV_ID,
+    WIKIBASE_TYPE,
     ExtractedStatement,
     ItemStatementSubjectType,
     Statement,
-    WIKIBASE_TYPE,
 )
 from ceur_graph.datamodel.utils import make_partial_model
 

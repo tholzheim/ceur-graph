@@ -6,11 +6,11 @@ from wikibaseintegrator.wbi_enums import WikibaseSnakType
 
 from ceur_graph.datamodel.item import (
     CEUR_DEV_ID,
+    WIKIBASE_TYPE,
+    WIKIDATA_ID,
     ExtractedStatement,
     ItemStatementSubjectType,
     Statement,
-    WIKIBASE_TYPE,
-    WIKIDATA_ID,
 )
 from ceur_graph.datamodel.utils import make_partial_model
 

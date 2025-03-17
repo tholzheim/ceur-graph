@@ -72,17 +72,9 @@ class Authorization(BaseModel):
     https://www.mediawiki.org/wiki/OAuth/Owner-only_consumers
     """
 
-    factgrid: (
-        WikibaseOauth1
-        | WikibaseOauth2
-        | WikibaseBotAuth
-        | WikibaseUserAuth
-        | WikibaseAuthorizationConfig
-    ) = WikibaseAuthorizationConfig()
-    wikidata: (
-        WikibaseOauth1
-        | WikibaseOauth2
-        | WikibaseBotAuth
-        | WikibaseUserAuth
-        | WikibaseAuthorizationConfig
-    ) = WikibaseAuthorizationConfig()
+    factgrid: WikibaseOauth1 | WikibaseOauth2 | WikibaseBotAuth | WikibaseUserAuth | WikibaseAuthorizationConfig = (
+        WikibaseAuthorizationConfig()
+    )
+    wikidata: WikibaseOauth1 | WikibaseOauth2 | WikibaseBotAuth | WikibaseUserAuth | WikibaseAuthorizationConfig = (
+        WikibaseAuthorizationConfig()
+    )

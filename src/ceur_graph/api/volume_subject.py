@@ -1,25 +1,25 @@
 import logging
 from typing import Annotated
+
 from fastapi import APIRouter, Depends
 from pydantic import Field
 from starlette import status
 
 from ceur_graph.api.auth import get_current_user
+from ceur_graph.api.utils import (
+    handle_get_all_statements,
+    handle_statement_creation,
+    handle_statement_deletion_by_id,
+    handle_statement_deletion_by_object,
+    handle_statement_update,
+)
+from ceur_graph.ceur_dev import CeurDev
 from ceur_graph.datamodel.subject import (
     Subject,
     SubjectBase,
     SubjectCreate,
     SubjectUpdate,
 )
-from ceur_graph.ceur_dev import CeurDev
-from ceur_graph.api.utils import (
-    handle_statement_deletion_by_id,
-    handle_statement_creation,
-    handle_statement_deletion_by_object,
-    handle_statement_update,
-    handle_get_all_statements,
-)
-
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +98,7 @@ def delete_subject_by_object_named_as(
 def update_subject(
     volume_id: Annotated[str, Field(pattern=r"Q\d+")],
     ceur_dev: Annotated[CeurDev, Depends(get_current_user)],
-    subject: SubjectUpdate, # type: ignore
+    subject: SubjectUpdate,  # type: ignore
     statement_id: str,
 ):
     """

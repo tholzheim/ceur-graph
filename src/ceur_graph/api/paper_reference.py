@@ -1,22 +1,23 @@
 import logging
 from typing import Annotated
+
 from fastapi import APIRouter, Depends
 from pydantic import Field
 from starlette import status
 
 from ceur_graph.api.auth import get_current_user
-from ceur_graph.datamodel.reference import (
-    ReferenceCreate,
-    ReferenceUpdate,
-    Reference,
-)
-from ceur_graph.ceur_dev import CeurDev
 from ceur_graph.api.utils import (
-    handle_statement_deletion_by_id,
-    handle_statement_creation,
-    handle_statement_update,
     handle_get_all_statements,
     handle_get_statement_by_id,
+    handle_statement_creation,
+    handle_statement_deletion_by_id,
+    handle_statement_update,
+)
+from ceur_graph.ceur_dev import CeurDev
+from ceur_graph.datamodel.reference import (
+    Reference,
+    ReferenceCreate,
+    ReferenceUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -79,7 +80,7 @@ def update_paper_reference(
     paper_id: Annotated[str, Field(pattern=r"Q\d+")],
     statement_id: str,
     ceur_dev: Annotated[CeurDev, Depends(get_current_user)],
-    reference: ReferenceUpdate,# type: ignore
+    reference: ReferenceUpdate,  # type: ignore
 ):
     """
     Update paper reference

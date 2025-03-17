@@ -1,15 +1,14 @@
 from typing import Annotated
 
 from pydantic import AnyHttpUrl, Field
-
 from wikibaseintegrator import datatypes
 
 from ceur_graph.datamodel.item import (
     CEUR_DEV_ID,
-    EntityBase,
-    ItemBase,
     WIKIBASE_TYPE,
     WIKIDATA_ID,
+    EntityBase,
+    ItemBase,
 )
 from ceur_graph.datamodel.utils import make_partial_model
 

@@ -1,5 +1,6 @@
 import logging
-from typing import Annotated, Optional
+from typing import Annotated
+
 from fastapi import APIRouter, Body, Depends
 from pydantic import Field
 from starlette import status
@@ -12,7 +13,7 @@ from ceur_graph.api.utils import (
     handle_item_update,
 )
 from ceur_graph.ceur_dev import CeurDev
-from ceur_graph.datamodel.paper import PaperCreate, Paper, PaperUpdate
+from ceur_graph.datamodel.paper import Paper, PaperCreate, PaperUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ async def get_paper(paper_id: str):
 @router.put("/{paper_id}", response_model=Paper, status_code=status.HTTP_200_OK)
 async def update_paper(
     paper_id: Annotated[str, Field(pattern=r"Q\d+")],
-    paper: Annotated[PaperUpdate, Body(embed=True)], # type: ignore
+    paper: Annotated[PaperUpdate, Body(embed=True)],  # type: ignore
     ceur_dev: Annotated[CeurDev, Depends(get_current_user)],
 ):
     return handle_item_update(

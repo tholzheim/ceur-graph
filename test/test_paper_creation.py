@@ -5,21 +5,19 @@ from string import Template
 
 import requests
 from pydantic import AnyHttpUrl
+from settings import Settings
 from wikibaseintegrator import datatypes
 from wikibaseintegrator.entities import ItemEntity
 
 from ceur_graph.ceur_dev import CeurDev
 from ceur_graph.datamodel.auth import WikibaseBotAuth
 from ceur_graph.datamodel.paper import Paper
-from settings import Settings
 
 
 class TestPaperCreation(unittest.TestCase):
     def setUp(self):
         settings = Settings()
-        auth = WikibaseBotAuth(
-            user=settings.WIKIBASE_BOT_USERNAME, password=settings.WIKIBASE_BOT_PASSWORD
-        )
+        auth = WikibaseBotAuth(user=settings.WIKIBASE_BOT_USERNAME, password=settings.WIKIBASE_BOT_PASSWORD)
         self.ceur_dev = CeurDev(auth)
 
     def get_volume_paper_records(self, volume_number: int) -> list[dict]:
@@ -28,9 +26,7 @@ class TestPaperCreation(unittest.TestCase):
         :param volume_number: volume number
         :return: list of paper records
         """
-        endpoint_url = Template(
-            "https://ceurspt.wikidata.dbis.rwth-aachen.de/volume/$volume_number/paper"
-        )
+        endpoint_url = Template("https://ceurspt.wikidata.dbis.rwth-aachen.de/volume/$volume_number/paper")
         url = endpoint_url.substitute(volume_number=volume_number)
         response = requests.get(url)
         return response.json()
@@ -56,9 +52,7 @@ class TestPaperCreation(unittest.TestCase):
             return None
         else:
             pdf_name = pdf_name.removeprefix(f"http://ceur-ws.org/Vol-{volume_number}/")
-            pdf_name = pdf_name.removeprefix(
-                f"https://ceur-ws.org/Vol-{volume_number}/"
-            )
+            pdf_name = pdf_name.removeprefix(f"https://ceur-ws.org/Vol-{volume_number}/")
             pdf_url = f"https://ceur-ws.org/Vol-{volume_number}/" + pdf_name
             if title is None:
                 label = f"unknown title ({pdf_name})"
@@ -88,14 +82,10 @@ class TestPaperCreation(unittest.TestCase):
             title_pid = self.ceur_dev.get_entity_id(
                 Paper.model_fields.get("title").json_schema_extra.get("ceur-dev_id")
             )
-            title = datatypes.MonolingualText(
-                language="en", text=paper.title, prop_nr=title_pid
-            )
+            title = datatypes.MonolingualText(language="en", text=paper.title, prop_nr=title_pid)
             item.claims.add(title)
         full_work_available_at_url_pid = self.ceur_dev.get_entity_id(
-            Paper.model_fields.get("full_work_available_at_url").json_schema_extra.get(
-                "ceur-dev_id"
-            )
+            Paper.model_fields.get("full_work_available_at_url").json_schema_extra.get("ceur-dev_id")
         )
         item.claims.add(
             datatypes.URL(
@@ -128,9 +118,7 @@ class TestPaperCreation(unittest.TestCase):
                 print(f"Skipping {i} paper of volume {volume_number}")
                 continue
             if self.paper_exists(paper):
-                print(
-                    f"Paper item already exists → Skipping {i} paper for volume {volume_number}"
-                )
+                print(f"Paper item already exists → Skipping {i} paper for volume {volume_number}")
                 continue
             paper_item = self.create_paper_item(paper)
             self.ceur_dev.write_item(paper_item)
@@ -147,12 +135,8 @@ class TestPaperCreation(unittest.TestCase):
         PREFIX wd: <https://ceur-dev.wikibase.cloud/entity/>
         ASK{?paper wdt:P12 <$pdf_url>. }
         """)
-        query = query_template.substitute(
-            pdf_url=paper.full_work_available_at_url.unicode_string()
-        )
-        item_exists = self.ceur_dev.execute_ask_query(
-            query, self.ceur_dev.sparql_endpoint
-        )
+        query = query_template.substitute(pdf_url=paper.full_work_available_at_url.unicode_string())
+        item_exists = self.ceur_dev.execute_ask_query(query, self.ceur_dev.sparql_endpoint)
         return item_exists
 
     @unittest.skip("For manual use")

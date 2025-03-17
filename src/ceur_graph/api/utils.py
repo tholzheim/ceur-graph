@@ -1,4 +1,5 @@
 import logging
+
 from fastapi import HTTPException
 from pydantic import BaseModel
 from starlette import status
@@ -28,9 +29,7 @@ from ceur_graph.wikibase import Wikibase
 logger = logging.getLogger(__name__)
 
 
-def handle_get_item_by_id(
-    wikibase: Wikibase, item_id: str, target_model: type[ItemBase]
-):
+def handle_get_item_by_id(wikibase: Wikibase, item_id: str, target_model: type[ItemBase]):
     """
     Get the item model by given id
     :param wikibase:
@@ -41,9 +40,7 @@ def handle_get_item_by_id(
     try:
         item: ItemEntity = wikibase.get_item(item_id)
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
     model = get_model_from_item(item, target_model)
     return model
 
@@ -68,9 +65,7 @@ def handle_item_deletion(
         wikibase.delete_entity(item, reason=reason)
     except Exception as e:
         logger.debug(f"Failed to delete item {item_id} of type {get_model_label(target_model)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
 def handle_item_update(
@@ -90,20 +85,14 @@ def handle_item_update(
     try:
         item: ItemEntity = wikibase.get_item(item_id)
         update_item_from_model(model=model_obj, item=item)
-        updated_item = wikibase.write_item(
-            item, summary=f"Updates {get_model_label(target_model)} statements"
-        )
+        updated_item = wikibase.write_item(item, summary=f"Updates {get_model_label(target_model)} statements")
         updated_paper = get_model_from_item(updated_item, target_model)
         return updated_paper
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
-def handle_item_creation(
-    wikibase: Wikibase, model_obj: EntityBase, target_model: type[ItemBase]
-):
+def handle_item_creation(wikibase: Wikibase, model_obj: EntityBase, target_model: type[ItemBase]):
     """
     Handle item creation
     :param wikibase:
@@ -118,14 +107,10 @@ def handle_item_creation(
         created_model = get_model_from_item(created_item, target_model)
         return created_model
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
-def handle_statement_deletion_by_id(
-    wikibase: Wikibase, item_id: str, statement_id: str, model: type[Statement]
-):
+def handle_statement_deletion_by_id(wikibase: Wikibase, item_id: str, statement_id: str, model: type[Statement]):
     """
     Handle statement deletion by id
     :param wikibase: wikibase instance to performe the action against
@@ -141,14 +126,10 @@ def handle_statement_deletion_by_id(
         if is_removed:
             wikibase.write_item(item, summary=f"Removes {get_model_label(model)}")
         else:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Statement not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Statement not found")
     except Exception as e:
         logger.error(e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
 def handle_statement_deletion_by_object(
@@ -172,14 +153,10 @@ def handle_statement_deletion_by_object(
         if is_removed:
             wikibase.write_item(item, summary=f"Removes {get_model_label(model)}")
         else:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Statement not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Statement not found")
     except Exception as e:
         logger.error(e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
 def handle_statement_creation(
@@ -199,18 +176,12 @@ def handle_statement_creation(
     try:
         item: ItemEntity = wikibase.get_item(item_id)
         add_statement_from_model(item, model_obj)
-        updated_item = wikibase.write_item(
-            item, summary=f"Adds {get_model_label(target_model)}"
-        )
-        created_subject = get_item_statement_by_model(
-            item=updated_item, model=model_obj, target_model=target_model
-        )
+        updated_item = wikibase.write_item(item, summary=f"Adds {get_model_label(target_model)}")
+        created_subject = get_item_statement_by_model(item=updated_item, model=model_obj, target_model=target_model)
         return created_subject
     except Exception as e:
         logger.error(e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
 def handle_statement_update(
@@ -231,29 +202,19 @@ def handle_statement_update(
     """
     try:
         item: ItemEntity = wikibase.get_item(item_id)
-        update_qualified_statement_from_model(
-            item=item, statement_id=statement_id, model=model_obj
-        )
+        update_qualified_statement_from_model(item=item, statement_id=statement_id, model=model_obj)
         # Check if modification would invalidate the model → error is raised if invalid
         get_item_statement_by_id(item, statement_id, target_model)
         # modification is valid → push changes to wikibase
-        updated_item = wikibase.write_item(
-            item, summary=f"Update {get_model_label(target_model)}"
-        )
-        updated_author_signature = get_item_statement_by_id(
-            updated_item, statement_id, target_model
-        )
+        updated_item = wikibase.write_item(item, summary=f"Update {get_model_label(target_model)}")
+        updated_author_signature = get_item_statement_by_id(updated_item, statement_id, target_model)
         return updated_author_signature
     except Exception as e:
         logger.error(e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
-def handle_get_all_statements(
-    wikibase: Wikibase, item_id: str, target_model: type[Statement]
-) -> list[Statement]:
+def handle_get_all_statements(wikibase: Wikibase, item_id: str, target_model: type[Statement]) -> list[Statement]:
     """
     Get all statements of the given model
     :param wikibase:
@@ -267,9 +228,7 @@ def handle_get_all_statements(
         return models
     except Exception as e:
         logger.error(e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
 def handle_get_statement_by_id(
@@ -287,16 +246,12 @@ def handle_get_statement_by_id(
         item: ItemEntity = wikibase.get_item(item_id)
         model = get_item_statement_by_id(item, statement_id, target_model)
         if model is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Statement not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Statement not found")
         else:
             return model
     except Exception as e:
         logger.error(e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
 def get_model_label(model: type[BaseModel]) -> str:

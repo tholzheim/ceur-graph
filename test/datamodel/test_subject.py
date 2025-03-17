@@ -2,9 +2,8 @@ import unittest
 
 from wikibaseintegrator.wbi_enums import WikibaseSnakType
 
-from ceur_graph.datamodel.subject import Subject, SubjectCreate
-
 from ceur_graph.datamodel.item import CEUR_DEV_ID
+from ceur_graph.datamodel.subject import Subject, SubjectCreate
 
 
 class TestSubject(unittest.TestCase):
