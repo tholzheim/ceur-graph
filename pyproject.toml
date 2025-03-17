@@ -1,15 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 [project]
 name = "ceur-graph"
 version = "0.1.0"
-description = "API for ceur graph entities"
+description = "API for ceur graph entities. To add ceur-ws data into the ceur-dev wikibase instance."
 readme = "README.md"
-license= "Apache-2.0"
+license = "Apache-2.0"
 authors = [
     { name = "tholzheim", email = "tim.holzheim@rwth-aachen.de" }
 ]
 requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard]>=0.115.11",
+    "pydantic-settings>=2.8.1",
     "pydantic>=2.10.6",
     "pyjwt>=2.10.1",
     "sparqlwrapper>=2.0.0",
@@ -21,3 +25,18 @@ dev = [
     "pytest>=8.3.4",
     "ruff>=0.9.7",
 ]
+
+
+classifiers=[
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License"
+    ]
+dynamic = [ "description"]
