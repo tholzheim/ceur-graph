@@ -1,5 +1,7 @@
+import functools
 import hashlib
 import logging
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timedelta
 from string import Template
@@ -18,6 +20,23 @@ logger = logging.getLogger(__name__)
 def get_default_user_agent() -> str:
     """Get default user agent"""
     return f"FactGridSyncWdBot 1.0 ({date.today()})"
+
+
+def log_execution_time(func):
+    """
+    Function decorator to log execution time of functions
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        execution_time = end_time - start_time
+        logger.debug(f"Execution time of {func.__name__}: {execution_time:.4f} seconds")
+        return result
+
+    return wrapper
 
 
 class Wikibase(BaseModel):
@@ -229,6 +248,7 @@ class Wikibase(BaseModel):
                 return None
 
     @property
+    @log_execution_time
     def wbi(self) -> WikibaseIntegrator:
         """Get wbi instance for this wikibase instance
         :return:
@@ -239,18 +259,21 @@ class Wikibase(BaseModel):
             self._wbi = wbi
         return self._wbi
 
+    @log_execution_time
     def get_item(self, qid: str) -> ItemEntity:
         """Get wikibase item by id
         :param qid: Qid of the item
         :return:
         """
         qid = self.get_entity_id(qid)
-        return self.wbi.item.get(
+        item = self.wbi.item.get(
             qid,
             mediawiki_api_url=self.mediawiki_api_url.unicode_string(),
             user_agent=get_default_user_agent(),
         )
+        return item
 
+    @log_execution_time
     def write_item(
         self,
         item: ItemEntity,
