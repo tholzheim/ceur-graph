@@ -58,6 +58,16 @@ class TestExtractedStatement(unittest.TestCase):
                 SubjectBase(subject_id="Q2", object_named_as="diff"),
                 False,
             ),
+            (
+                SubjectBase(
+                    subject_id=WikibaseSnakType.UNKNOWN_VALUE.value,
+                    object_named_as="string42",
+                ),
+                SubjectBase(
+                    object_named_as="string42",
+                ),
+                True,
+            ),
         ]
         for subject1, subject2, expected_equal in params:
             with self.subTest(subject1=subject1, subject2=subject2):
