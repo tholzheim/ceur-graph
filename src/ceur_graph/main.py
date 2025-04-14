@@ -13,6 +13,7 @@ from ceur_graph.api import (
     volume,
     volume_editors,
     volume_subject,
+    wd_migrate,
 )
 from ceur_graph.api.auth import login_user
 
@@ -26,6 +27,7 @@ app.include_router(paper_reference.router)
 app.include_router(volume.router)
 app.include_router(volume_subject.router)
 app.include_router(volume_editors.router)
+app.include_router(wd_migrate.router)
 
 
 @app.post("/token")

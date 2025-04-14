@@ -1,0 +1,61 @@
+name: CEUR-dev Migrator
+description: |
+  Wikidata to CEUR-dev Mapping configuration
+source:
+  name: Wikidata
+  sparql_url: https://query.wikidata.org/sparql
+  mediawiki_api_url: https://www.wikidata.org/w/api.php
+  mediawiki_rest_url: https://www.wikidata.org/w/rest.php
+  website: https://wikidata.org/
+  item_prefix: http://www.wikidata.org/entity/
+  user:
+  password:
+target:
+  name: CEUR-dev
+  sparql_url: https://ceur-dev.wikibase.cloud/query/sparql
+  mediawiki_api_url: https://ceur-dev.wikibase.cloud/w/api.php
+  mediawiki_rest_url: https://ceur-dev.wikibase.cloud/w/rest.php
+  website: https://ceur-dev.wikibase.cloud
+  quickstatement_url: https://ceur-dev.wikibase.cloud/tools/quickstatements/
+  item_prefix: https://ceur-dev.wikibase.cloud/entity/
+  user:
+  password:
+mapping:
+  location_of_mapping: target
+  item_mapping_query: |
+    PREFIX wdt: <https://ceur-dev.wikibase.cloud/prop/direct/>
+    SELECT ?source_entity ?target_entity
+    WHERE{
+
+      VALUES ?source_entity {
+        $source_entities
+      }
+      ?factgrid_item wdt:P2 ?source_entity.
+      BIND(STRAFTER(STR(?factgrid_item), "https://ceur-dev.wikibase.cloud/entity/") AS ?target_entity)
+    }
+  property_mapping_query: |
+    PREFIX wdt: <https://ceur-dev.wikibase.cloud/prop/direct/>
+    SELECT ?source_entity ?target_entity
+    WHERE{
+
+      VALUES ?source_entity {
+        $source_entities
+      }
+      ?factgrid_item wdt:P1 ?source_entity.
+      BIND(STRAFTER(STR(?factgrid_item), "https://ceur-dev.wikibase.cloud/entity/") AS ?target_entity)
+    }
+  languages: ['en', 'es', 'fr', 'pt',  'de', 'ja', 'it']
+  sitelinks: []
+  ignore_unknown_values: True
+  ignore_no_values: True
+back_reference:
+  item:
+    type: Property
+    id: P2
+  property:
+    type: Property
+    id: P1
+
+type_casts:
+  enabled: True
+  fallback_language: "en"
