@@ -4,8 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from wikibasemigrator.migrator import WikibaseMigrator
-from wikibasemigrator.model.profile import load_profile, UserToken, WikibaseMigrationProfile
-from wikibasemigrator.model.translations import EntityTranslationResult
+from wikibasemigrator.model.profile import UserToken, WikibaseMigrationProfile, load_profile
 
 from ceur_graph.api.auth import get_current_user
 from ceur_graph.ceur_dev import CeurDev
