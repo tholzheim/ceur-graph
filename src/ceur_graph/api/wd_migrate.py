@@ -32,6 +32,11 @@ def wikidata_import(
     # todo fix for proper resource loading
     path = Path(__file__).parent.parent.joinpath("./resources/migration_profiles/wd_to_ceur-dev.yaml")
     migration_profile = load_profile(path)
+    if ceur_dev.auth_config is None:
+        return {
+            "error": True,
+            "message": "Authentication configuration not provided. Please ensure that you are logged in",
+        }
     update_migration_profile(ceur_dev.auth_config, migration_profile)
     try:
         migrator = WikibaseMigrator(migration_profile)
