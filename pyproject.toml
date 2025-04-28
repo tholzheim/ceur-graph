@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 [project]
 name = "ceur-graph"
-version = "0.1.1"
+version = "0.1.2"
 description = "API for ceur graph entities. To add ceur-ws data into the ceur-dev wikibase instance."
 readme = "README.md"
 license = "Apache-2.0"
