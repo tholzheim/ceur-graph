@@ -25,7 +25,7 @@ class CeurDev(Wikibase):
         )
 
     @classmethod
-    def _load_query_and_substitute(cls, query_file: str, params: dict) -> str | None:
+    def _load_query_and_substitute(cls, query_file: str, params: dict) -> str:
         """
         Load the query file and substitute it with the provided params.
         :param query_file:
@@ -36,12 +36,11 @@ class CeurDev(Wikibase):
         query_template = Template(query_str)
         query = query_template.safe_substitute(params)
         if query is None:
-            logger.debug(f"Unable to build query: {query_file} with params: {params}")
-            return None
+            raise ValueError(f"Unable to build query: {query_file} with params: {params}")
         return query
 
     @classmethod
-    def get_papers_of_proceedings_by_volume_number_query(cls, volume_number: int) -> str | None:
+    def get_papers_of_proceedings_by_volume_number_query(cls, volume_number: int) -> str:
         """
         Get the query to get papers of volume by volume number.
         :param volume_number: volume number
@@ -52,7 +51,7 @@ class CeurDev(Wikibase):
         )
 
     @classmethod
-    def get_proceedings_by_volume_number_query(cls, volume_number: int) -> str | None:
+    def get_proceedings_by_volume_number_query(cls, volume_number: int) -> str:
         """
         Get the ceur-dev volume QID for the given volume number.
         :param volume_number: volume number
@@ -69,7 +68,6 @@ class CeurDev(Wikibase):
         :return:
         """
         query = self.get_proceedings_by_volume_number_query(volume_id)
-
         qres = self.execute_query(query, self.sparql_endpoint)
         if len(qres) == 0:
             return None
@@ -79,7 +77,7 @@ class CeurDev(Wikibase):
             logger.debug(f"Found {len(qres)} proceedings for volume {volume_id}")
             return qres[0].get("proceedings")
 
-    def get_papers_of_proceedings_by_volume_number(self, volume_id: int) -> list[str] | None:
+    def get_papers_of_proceedings_by_volume_number(self, volume_id: int) -> list[str]:
         """
         Get the ceur-dev papers QID for the given volume id.
         :param volume_id: volume id
@@ -87,5 +85,9 @@ class CeurDev(Wikibase):
         """
         query = self.get_papers_of_proceedings_by_volume_number_query(volume_id)
         qres = self.execute_query(query, self.sparql_endpoint)
-        papers = [record.get("document") for record in qres]
-        return papers
+        paper_ids = []
+        for record in qres:
+            document_qid = record.get("document")
+            if document_qid is not None:
+                paper_ids.append(document_qid)
+        return paper_ids
