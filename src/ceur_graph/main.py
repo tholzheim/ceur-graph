@@ -16,6 +16,7 @@ from ceur_graph.api import (
     wd_migrate,
 )
 from ceur_graph.api.auth import login_user
+from ceur_graph.ceur_dev import CeurDev
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -35,9 +36,14 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     return await login_user(form_data.username, form_data.password)
 
 
-@app.get("/volumes/{volume_number}/papers")
-def get_volume_papers(volume_number: int):
-    return {"volume_number": volume_number}
+@app.get("/volumes/{volume_number}/papers/ids")
+def get_volume_paper_ids(volume_number: int):
+    """
+    Get the documents published in a proceedning by its volume number.
+    The document can either be a paper, preface, invited paper or keynote.
+    """
+    volume_documents = CeurDev().get_papers_of_proceedings_by_volume_number(volume_number)
+    return volume_documents
 
 
 if __name__ == "__main__":

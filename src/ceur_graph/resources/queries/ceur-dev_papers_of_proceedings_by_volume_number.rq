@@ -1,0 +1,11 @@
+# Name: papers of proceedings by volume number
+# Graph: https://ceur-dev.wikibase.cloud
+PREFIX wdt: <https://ceur-dev.wikibase.cloud/prop/direct/>
+PREFIX wd: <https://ceur-dev.wikibase.cloud/entity/>
+PREFIX p: <https://ceur-dev.wikibase.cloud/prop/>
+PREFIX pq: <https://ceur-dev.wikibase.cloud/prop/qualifier/>
+SELECT DISTINCT ?document {
+  ?proceedings wdt:P15 wd:Q13.  # part of the series (P15) → CEUR-WS (Q13)
+  ?proceedings p:P15/pq:P17 "$volume_number". # part of the series (P15) statement / volume(P17)
+  ?document wdt:P94 ?proceedings.
+}
