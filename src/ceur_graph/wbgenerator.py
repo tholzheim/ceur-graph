@@ -55,7 +55,8 @@ def create_item_from_model(model: BaseModel, wbi: WikibaseIntegrator) -> ItemEnt
                     value=value,
                     language=default_language,
                 )
-                claims.append(claim)
+                if claim is not None:
+                    claims.append(claim)
             for claim in claims:
                 item.claims.add(claim)
     return item
