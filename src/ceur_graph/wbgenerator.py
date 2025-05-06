@@ -201,7 +201,8 @@ def get_model_from_item(item: ItemEntity, model: type[BaseModel]) -> BaseModel:
                 claim = claims[0] if claims else None
                 if claim is not None:
                     field_value = get_snak_value(claim.mainsnak)
-        record[field_name] = field_value
+        if field_value is not None:
+            record[field_name] = field_value
     return model.model_validate(record)
 
 
