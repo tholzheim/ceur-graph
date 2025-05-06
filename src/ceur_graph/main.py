@@ -39,7 +39,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
 @app.get("/volumes/{volume_number}/papers/ids")
 def get_volume_paper_ids(volume_number: int):
     """
-    Get the documents published in a proceedning by its volume number.
+    Get the documents published in a proceedings by its volume number.
     The document can either be a paper, preface, invited paper or keynote.
     """
     volume_documents = CeurDev().get_papers_of_proceedings_by_volume_number(volume_number)
