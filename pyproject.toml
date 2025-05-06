@@ -30,16 +30,16 @@ dependencies = [
     "pyjwt>=2.10.1",
     "sparqlwrapper>=2.0.0",
     "wikibaseintegrator>=0.12.12",
-    "pytest-cov>=6.0.0",
     "wikibasemigrator>=0.0.20",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
     "ruff>=0.9.7",
     "tox>=4.24.2",
-    "httpx"
+    "httpx",
 ]
 
 
@@ -94,6 +94,6 @@ testpaths = [
     "tests",
 ]
 pythonpath = [
-  "src"
+  "src",
 ]
 asyncio_mode = "auto"

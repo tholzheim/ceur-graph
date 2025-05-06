@@ -7,7 +7,7 @@ from ceur_graph.datamodel.subject import SubjectBase
 
 class TestUtils(unittest.TestCase):
     """
-    test utility functions
+    tests utility functions
     """
 
     def test_get_model_label(self):

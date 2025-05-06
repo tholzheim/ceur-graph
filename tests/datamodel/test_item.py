@@ -8,53 +8,53 @@ from ceur_graph.datamodel.subject import SubjectBase
 class TestExtractedStatement(unittest.TestCase):
     def test_object_named_as_required(self):
         """
-        test if object_named_as is required if the statement object is unknown
+        tests if object_named_as is required if the statement object is unknown
         """
         record = {"subject_id": WikibaseSnakType.UNKNOWN_VALUE.value}
         self.assertRaises(ValueError, SubjectBase.model_validate, record)
 
-        record["object_named_as"] = "test"
+        record["object_named_as"] = "tests"
         subject = SubjectBase.model_validate(record)
         self.assertIsInstance(subject, SubjectBase)
 
     def test_equivalence(self):
         params = [
             (
-                SubjectBase(subject_id="Q1", object_named_as="test"),
-                SubjectBase(subject_id="Q1", object_named_as="test"),
+                SubjectBase(subject_id="Q1", object_named_as="tests"),
+                SubjectBase(subject_id="Q1", object_named_as="tests"),
                 True,
             ),
             (
-                SubjectBase(subject_id="Q1", object_named_as="test"),
+                SubjectBase(subject_id="Q1", object_named_as="tests"),
                 SubjectBase(subject_id="Q1"),
                 True,
             ),
             (
-                SubjectBase(subject_id="Q1", object_named_as="test"),
+                SubjectBase(subject_id="Q1", object_named_as="tests"),
                 SubjectBase(subject_id="Q1", object_named_as="diff"),
                 False,
             ),
             (
-                SubjectBase(subject_id="Q1", object_named_as="test"),
+                SubjectBase(subject_id="Q1", object_named_as="tests"),
                 SubjectBase(
                     subject_id=WikibaseSnakType.UNKNOWN_VALUE.value,
-                    object_named_as="test",
+                    object_named_as="tests",
                 ),
                 True,
             ),
             (
                 SubjectBase(
                     subject_id=WikibaseSnakType.UNKNOWN_VALUE.value,
-                    object_named_as="test",
+                    object_named_as="tests",
                 ),
                 SubjectBase(
                     subject_id=WikibaseSnakType.UNKNOWN_VALUE.value,
-                    object_named_as="test",
+                    object_named_as="tests",
                 ),
                 True,
             ),
             (
-                SubjectBase(subject_id="Q1", object_named_as="test"),
+                SubjectBase(subject_id="Q1", object_named_as="tests"),
                 SubjectBase(subject_id="Q2", object_named_as="diff"),
                 False,
             ),

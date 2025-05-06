@@ -11,7 +11,7 @@ from wikibaseintegrator.entities import ItemEntity
 from ceur_graph.ceur_dev import CeurDev
 from ceur_graph.datamodel.auth import WikibaseBotAuth
 from ceur_graph.datamodel.paper import Paper
-from test.settings import Settings
+from tests.settings import Settings
 
 
 class TestPaperCreation(unittest.TestCase):
@@ -152,7 +152,7 @@ class TestPaperCreation(unittest.TestCase):
     @unittest.skip("For manual use")
     def test_login_credentials(self):
         """
-        test login with the credentials
+        tests login with the credentials
         """
         self.ceur_dev.get_wbi_login()
         self.assertTrue(True)
