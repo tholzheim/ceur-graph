@@ -97,6 +97,9 @@ class Wikibase(BaseModel):
         :param endpoint_url:
         :return:
         """
+        if query is None:
+            logger.debug("No query provided")
+            return None
         query_first_line = query.split("\n")[0][:30] if query.strip().startswith("#") else ""
         query_hash = hashlib.sha512(query.encode("utf-8")).hexdigest()
         logger.debug(f"Executing SPARQL query {query_first_line} ({query_hash}) against {endpoint_url}")
