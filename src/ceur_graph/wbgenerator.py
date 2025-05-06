@@ -136,7 +136,7 @@ def get_claim(prop_id: str, datatype: str, value: Any, language: str | None = No
         case datatypes.String.DTYPE:
             claim = datatypes.String(value=str(value), prop_nr=prop_nr)
         case datatypes.Time.DTYPE:
-            claim = datatypes.Time(value=value, prop_nr=prop_nr)
+            claim = datatypes.Time(time=value, prop_nr=prop_nr)
         case datatypes.ExternalID.DTYPE:
             claim = datatypes.ExternalID(value=value, prop_nr=prop_nr)
         case datatypes.GlobeCoordinate.DTYPE:
