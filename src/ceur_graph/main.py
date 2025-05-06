@@ -6,6 +6,7 @@ from fastapi import Depends, FastAPI
 from fastapi.security import OAuth2PasswordRequestForm
 
 from ceur_graph.api import (
+    ceurws,
     paper_authors,
     paper_reference,
     paper_subject,
@@ -16,7 +17,6 @@ from ceur_graph.api import (
     wd_migrate,
 )
 from ceur_graph.api.auth import login_user
-from ceur_graph.ceur_dev import CeurDev
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -29,21 +29,12 @@ app.include_router(volume.router)
 app.include_router(volume_subject.router)
 app.include_router(volume_editors.router)
 app.include_router(wd_migrate.router)
+app.include_router(ceurws.router)
 
 
 @app.post("/token")
 async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     return await login_user(form_data.username, form_data.password)
-
-
-@app.get("/volumes/{volume_number}/papers/ids")
-def get_volume_paper_ids(volume_number: int):
-    """
-    Get the documents published in a proceedings by its volume number.
-    The document can either be a paper, preface, invited paper or keynote.
-    """
-    volume_documents = CeurDev().get_papers_of_proceedings_by_volume_number(volume_number)
-    return volume_documents
 
 
 if __name__ == "__main__":
