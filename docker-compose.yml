@@ -3,6 +3,7 @@ services:
     container_name: ceur-graph
     build:
       context: ./
+    restart: unless-stopped
     ports:
-      - 9090:8000
+      - 9005:8000
 
