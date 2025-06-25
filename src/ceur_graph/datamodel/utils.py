@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, TypeVar
+from typing import Any
 
 from pydantic import BaseModel, create_model
 from pydantic.fields import FieldInfo
@@ -12,10 +12,9 @@ def make_field_optional(field: FieldInfo, default: Any = None) -> tuple[Any, Fie
     return (new.annotation, new)
 
 
-BaseModelT = TypeVar("BaseModelT", bound=BaseModel)
-
-
-def make_partial_model(model: type[BaseModelT], model_name: str | None = None) -> type[BaseModelT]:
+def make_partial_model[BaseModelT: BaseModel](
+    model: type[BaseModelT], model_name: str | None = None
+) -> type[BaseModelT]:
     if model_name is None:
         model_name = f"Partial{model.__name__}"
     return create_model(  # type: ignore

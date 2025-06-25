@@ -1,5 +1,5 @@
 import logging
-from typing import Any, TypeVar, get_origin
+from typing import Any, get_origin
 
 from pydantic import AnyHttpUrl, BaseModel
 from pydantic.fields import FieldInfo
@@ -210,10 +210,7 @@ def get_model_from_item(item: ItemEntity, model: type[BaseModel]) -> BaseModel:
     return model.model_validate(record)
 
 
-T = TypeVar("T", bound=StatementBase)
-
-
-def get_models_from_qualified_statement(item: ItemEntity, model: type[T]) -> list[T]:
+def get_models_from_qualified_statement[T: StatementBase](item: ItemEntity, model: type[T]) -> list[T]:
     """
     Get list of qualified statement objects from given item entity
     ToDo: Report failed model creations and return the successful once along with the list of failure ids
