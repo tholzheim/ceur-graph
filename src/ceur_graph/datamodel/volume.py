@@ -118,6 +118,26 @@ class VolumeBase(EntityBase):
             }
         ),
     ] = None  # type: ignore
+    number_of_submissions: Annotated[
+        int,
+        Field(
+            json_schema_extra={
+                CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/direct/P56",
+                WIKIDATA_ID: "http://www.wikidata.org/prop/direct/P12655",
+                WIKIBASE_TYPE: datatypes.Quantity.DTYPE,
+            }
+        ),
+    ] = None  # type: ignore
+    number_of_accepted_submissions: Annotated[
+        int,
+        Field(
+            json_schema_extra={
+                CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/direct/P77",
+                WIKIDATA_ID: "http://www.wikidata.org/prop/direct/P12649",
+                WIKIBASE_TYPE: datatypes.Quantity.DTYPE,
+            }
+        ),
+    ] = None  # type: ignore
 
 
 class VolumeCreate(VolumeBase):

@@ -139,6 +139,8 @@ def get_claim(prop_id: str, datatype: str, value: Any, language: str | None = No
             claim = datatypes.Time(time=value, prop_nr=prop_nr)
         case datatypes.ExternalID.DTYPE:
             claim = datatypes.ExternalID(value=value, prop_nr=prop_nr)
+        case datatypes.Quantity.DTYPE:
+            claim = datatypes.Quantity(amount=value, prop_nr=prop_nr)
         case datatypes.GlobeCoordinate.DTYPE:
             if isinstance(value, Coordinate):
                 claim = datatypes.GlobeCoordinate(longitude=value.longitude, latitude=value.latitude, prop_nr=prop_nr)
@@ -162,6 +164,8 @@ def get_snak_value(snak: Snak) -> Any:
             value = snak.datavalue["value"]
         case datatypes.Time.DTYPE:
             value = snak.datavalue["value"].get("time")
+        case datatypes.Quantity.DTYPE:
+            value = snak.datavalue["value"].get("amount")
     return value
 
 
