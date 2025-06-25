@@ -18,7 +18,7 @@ from ceur_graph.api import (
 )
 from ceur_graph.api.auth import login_user
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI()
 app.include_router(papers.router)

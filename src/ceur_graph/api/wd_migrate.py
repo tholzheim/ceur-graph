@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from wikibasemigrator.migrator import WikibaseMigrator
 from wikibasemigrator.model.profile import UserToken, WikibaseMigrationProfile, load_profile
+from wikibasemigrator.model.translations import EntitySetTranslationResult, EntityTranslationResult
 
 from ceur_graph.api.auth import get_current_user
 from ceur_graph.ceur_dev import CeurDev
@@ -42,7 +43,14 @@ def wikidata_import(
         migrator = WikibaseMigrator(migration_profile)
         translations = migrator.translate_entities_by_id([entity_id])
         migrated_entities = migrator.migrate_entities_to_target(translations, summary=summary)
-        qid = migrated_entities[0].created_entity.id
+        # ToDo in case of merge created_entity is empty!
+        migrated_entity: EntityTranslationResult = migrated_entities[0]
+        if migrated_entity.created_entity is not None:
+            qid = migrated_entities[0].created_entity.id
+        elif migrated_entity.entity.id is not None:
+            qid = migrated_entity.entity.id
+        else:
+            raise ValueError("Error on import! Entity not created or augmented")
         return {"error": False, "wikidata_id": entity_id, "ceurdev_id": qid}
     except Exception as e:
         logger.error(f"Failed to migrate {entity_id}: {e}")
