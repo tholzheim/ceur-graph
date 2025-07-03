@@ -11,6 +11,7 @@ from ceur_graph.api import (
     paper_reference,
     paper_subject,
     papers,
+    scholarlyarticle,
     volume,
     volume_editors,
     volume_subject,
@@ -30,6 +31,7 @@ app.include_router(volume_subject.router)
 app.include_router(volume_editors.router)
 app.include_router(wd_migrate.router)
 app.include_router(ceurws.router)
+app.include_router(scholarlyarticle.router)
 
 
 @app.post("/token")
