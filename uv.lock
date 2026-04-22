@@ -167,6 +167,7 @@ version = "0.1.5"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi", extra = ["standard"] },
+    { name = "httpx" },
     { name = "linkml-runtime" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
@@ -188,6 +189,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.11" },
+    { name = "httpx", specifier = ">=0.27" },
     { name = "linkml-runtime", specifier = ">=1.8" },
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pydantic-settings", specifier = ">=2.8.1" },
