@@ -1,8 +1,7 @@
 import unittest
 
 from ceur_graph.api.utils import get_model_label
-from ceur_graph.datamodel.scholarsignature import ScholarSignature
-from ceur_graph.datamodel.subject import SubjectBase
+from ceur_graph.codegen import ScholarSignature, SubjectBase
 
 
 class TestUtils(unittest.TestCase):

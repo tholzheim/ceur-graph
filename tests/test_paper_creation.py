@@ -10,7 +10,7 @@ from wikibaseintegrator.entities import ItemEntity
 
 from ceur_graph.ceur_dev import CeurDev
 from ceur_graph.datamodel.auth import WikibaseBotAuth
-from ceur_graph.datamodel.paper import Paper
+from ceur_graph.codegen import Paper
 from tests.settings import Settings
 
 

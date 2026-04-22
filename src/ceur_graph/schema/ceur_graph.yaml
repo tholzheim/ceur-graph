@@ -1,0 +1,380 @@
+id: https://ceur-dev.wikibase.cloud/schema/ceur_graph
+name: ceur_graph
+description: Schema for CEUR-WS graph entities with Wikibase property mappings
+
+prefixes:
+  linkml: https://w3id.org/linkml/
+
+default_range: string
+
+imports:
+  - linkml:types
+
+types:
+  anyuri:
+    uri: xsd:anyURI
+    base: str
+  item_statement_subject:
+    uri: xsd:string
+    base: str
+    description: "QID (Q\\d+) or Wikibase somevalue sentinel"
+
+slots:
+  title:
+    range: string
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P5"
+      wikidata_id: "http://www.wikidata.org/prop/direct/P1476"
+      wikibase_type: monolingualtext
+
+  dblp_publication_id:
+    range: string
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P9"
+      wikibase_type: external-id
+
+  copyright_license:
+    range: string
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P96"
+      wikibase_type: item
+
+  wikidata_id:
+    range: string
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P2"
+      wikibase_type: external-id
+
+  language_of_work:
+    range: string
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P14"
+      wikibase_type: item
+
+  full_work_available_at_url:
+    range: anyuri
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P12"
+      wikibase_type: url
+
+  published_in:
+    range: string
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P94"
+      wikibase_type: item
+
+  pages:
+    range: integer
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P89"
+      wikibase_type: string
+
+  presented_in:
+    range: string
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P95"
+      wikibase_type: item
+
+  short_name:
+    range: string
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P11"
+      wikibase_type: monolingualtext
+
+  urn:
+    range: string
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P7"
+      wikibase_type: external-id
+
+  is_proceedings_from:
+    range: string
+    multivalued: true
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P16"
+      wikibase_type: item
+
+  volume:
+    range: integer
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P17"
+      wikibase_type: string
+
+  part_of_the_series:
+    range: string
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P15"
+      wikibase_type: item
+
+  number_of_submissions:
+    range: integer
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P56"
+      wikidata_id: "http://www.wikidata.org/prop/direct/P12655"
+      wikibase_type: quantity
+
+  number_of_accepted_submissions:
+    range: integer
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P77"
+      wikidata_id: "http://www.wikidata.org/prop/direct/P12649"
+      wikibase_type: quantity
+
+  scholar_id:
+    range: item_statement_subject
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/statement/P93"
+      wikibase_type: item
+
+  series_ordinal:
+    range: integer
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P18"
+      wikibase_type: string
+
+  orcid_id:
+    range: string
+    pattern: "\\d{4}-\\d{4}-\\d{4}-\\d{3}[\\dX]"
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P87"
+      wikibase_type: external-id
+
+  affiliation_string:
+    range: string
+    multivalued: true
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P19"
+      wikibase_type: string
+
+  affiliation:
+    range: string
+    multivalued: true
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P20"
+      wikibase_type: item
+
+  dblp_author_id:
+    range: string
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P88"
+      wikibase_type: external-id
+
+  subject_id:
+    range: item_statement_subject
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/statement/P72"
+      wikibase_type: item
+
+  reference_id:
+    range: item_statement_subject
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/statement/P90"
+      wikibase_type: item
+
+  doi:
+    range: string
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P29"
+      wikibase_type: external-id
+
+  author_name_string:
+    range: string
+    multivalued: true
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P92"
+      wikibase_type: string
+
+  author:
+    range: string
+    multivalued: true
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P93"
+      wikibase_type: item
+
+  described_at_url:
+    range: anyuri
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P8"
+      wikibase_type: url
+
+  # Statement-reference slots (range is a schema class, no Wikibase annotations)
+  authors:
+    range: ScholarSignature
+    multivalued: true
+    inlined_as_list: true
+
+  paper_subjects:
+    range: Subject
+    multivalued: true
+    inlined_as_list: true
+
+  references:
+    range: Reference
+    multivalued: true
+    inlined_as_list: true
+
+  editors:
+    range: EditorSignature
+    multivalued: true
+    inlined_as_list: true
+
+  volume_subjects:
+    range: Subject
+    multivalued: true
+    inlined_as_list: true
+
+classes:
+  Paper:
+    annotations:
+      python_base: entity_item
+    slots:
+      - title
+      - published_in
+      - full_work_available_at_url
+      - pages
+      - dblp_publication_id
+      - copyright_license
+      - presented_in
+      - language_of_work
+      - wikidata_id
+      - authors
+      - paper_subjects
+      - references
+    slot_usage:
+      published_in:
+        required: true
+      full_work_available_at_url:
+        required: true
+
+  Volume:
+    annotations:
+      python_base: entity_item
+    slots:
+      - title
+      - short_name
+      - dblp_publication_id
+      - copyright_license
+      - wikidata_id
+      - language_of_work
+      - urn
+      - is_proceedings_from
+      - full_work_available_at_url
+      - volume
+      - part_of_the_series
+      - number_of_submissions
+      - number_of_accepted_submissions
+      - editors
+      - volume_subjects
+
+  ScholarlyArticle:
+    is_a: Paper
+    annotations:
+      python_base: entity_item
+    slot_usage:
+      wikidata_id:
+        required: true
+      published_in:
+        required: false
+      full_work_available_at_url:
+        required: false
+
+  ScholarSignature:
+    annotations:
+      python_base: extracted_statement
+    slots:
+      - scholar_id
+      - series_ordinal
+      - orcid_id
+      - affiliation_string
+      - affiliation
+      - dblp_author_id
+
+  EditorSignature:
+    is_a: ScholarSignature
+    annotations:
+      python_base: extracted_statement
+    slot_usage:
+      scholar_id:
+        annotations:
+          ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/statement/P10"
+          wikibase_type: item
+
+  Subject:
+    annotations:
+      python_base: extracted_statement
+      model_title: Subject
+    slots:
+      - subject_id
+
+  Reference:
+    annotations:
+      python_base: extracted_statement
+    slots:
+      - reference_id
+      - series_ordinal
+      - doi
+      - title
+      - author_name_string
+      - author
+      - described_at_url
+    slot_usage:
+      title:
+        annotations:
+          ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P5"
+          wikidata_id: "http://www.wikidata.org/prop/qualifier/P1476"
+          wikibase_type: monolingualtext
+
+# Custom section: FastAPI endpoint definitions (not parsed by linkml-runtime)
+endpoints:
+  - model: Paper
+    type: item
+    prefix: /papers
+    tag: papers
+    id_param: paper_id
+
+  - model: Volume
+    type: item
+    prefix: /volumes
+    tag: Volumes
+    id_param: volume_id
+
+  - model: ScholarlyArticle
+    type: item
+    prefix: /scholarlyarticles
+    tag: Scholarly Article
+    id_param: scholarlyarticle_id
+
+  - model: ScholarSignature
+    type: statement
+    prefix: /papers/{paper_id}/authors
+    tag: AuthorSignature
+    parent_param: paper_id
+    has_delete_by_object: true
+
+  - model: Subject
+    type: statement
+    prefix: /papers/{paper_id}/subjects
+    tag: Paper Subjects
+    parent_param: paper_id
+    has_delete_by_object: true
+
+  - model: Subject
+    type: statement
+    prefix: /volumes/{volume_id}/subjects
+    tag: Volume Subjects
+    parent_param: volume_id
+    has_delete_by_object: true
+
+  - model: EditorSignature
+    type: statement
+    prefix: /volumes/{volume_id}/editors
+    tag: EditorSignature
+    parent_param: volume_id
+    has_delete_by_object: true
+
+  - model: Reference
+    type: statement
+    prefix: /papers/{paper_id}/references
+    tag: References
+    parent_param: paper_id
+    has_get_by_id: true

@@ -1,5 +1,6 @@
 import logging
-from typing import Any, get_origin
+import types as _types_module
+from typing import Any, Union, get_args, get_origin
 
 from pydantic import AnyHttpUrl, BaseModel
 from pydantic.fields import FieldInfo
@@ -22,6 +23,33 @@ from ceur_graph.wikibase import Wikibase
 logger = logging.getLogger(__name__)
 
 
+def get_statement_field_type(annotation) -> type[StatementBase] | None:
+    """
+    Return the StatementBase subclass if *annotation* is StatementBase, list[StatementBase],
+    or Optional[StatementBase]; otherwise return None.
+    """
+    origin = get_origin(annotation)
+    if origin is list:
+        args = get_args(annotation)
+        if args and isinstance(args[0], type) and issubclass(args[0], StatementBase):
+            return args[0]
+    elif origin is Union or (
+        hasattr(_types_module, "UnionType") and isinstance(annotation, _types_module.UnionType)
+    ):
+        for arg in get_args(annotation):
+            if isinstance(arg, type) and issubclass(arg, StatementBase):
+                return arg
+    elif isinstance(annotation, type) and issubclass(annotation, StatementBase):
+        return annotation
+    return None
+
+
+def _get_schema_extra(field_metadata: FieldInfo) -> dict:
+    """Return json_schema_extra as a plain dict, or {} if absent."""
+    extra = field_metadata.json_schema_extra
+    return extra if isinstance(extra, dict) else {}
+
+
 def create_item_from_model(model: BaseModel, wbi: WikibaseIntegrator) -> ItemEntity:
     """
     Create ItemEntity from given object model
@@ -35,14 +63,29 @@ def create_item_from_model(model: BaseModel, wbi: WikibaseIntegrator) -> ItemEnt
     field_metadata: FieldInfo
     for field_name, field_metadata in model.model_fields.items():
         field_value = getattr(model, field_name)
-        field_type = field_metadata.json_schema_extra.get(WIKIBASE_TYPE)
-        field_prop_id = field_metadata.json_schema_extra.get(CEUR_DEV_ID)
+        if field_value is None:
+            continue
+
+        # Statement-reference field (list[ScholarSignature], etc.)
+        stmt_type = get_statement_field_type(field_metadata.annotation)
+        if stmt_type is not None:
+            values = field_value if isinstance(field_value, list) else [field_value]
+            for stmt in values:
+                if stmt is not None:
+                    claim = create_qualified_statement_from_model(stmt)
+                    item.claims.add(claim, action_if_exists=ActionIfExists.FORCE_APPEND)
+            continue
+
+        extra = _get_schema_extra(field_metadata)
+        if not extra:
+            continue
+        field_type = extra.get(WIKIBASE_TYPE)
+        field_prop_id = extra.get(CEUR_DEV_ID)
         if field_prop_id == "rdfs:label":
             item.labels.set(default_language, field_value)
         elif field_prop_id == "schema:description":
             item.descriptions.set(default_language, field_value)
         else:
-            # ToDo: Add support for qualifiers e.g. if value is an object and id has prefix p:
             claims = []
             if isinstance(field_value, list):
                 values = field_value
@@ -67,15 +110,32 @@ def update_item_from_model(model: BaseModel, item: ItemEntity):
     Update ItemEntity from given object model
     :param model:
     :param item:
-    :param wbi:
     :return:
     """
     default_language = "en"
     for field_name in model.model_fields_set:
         field_value: Any = getattr(model, field_name)
         field_metadata: FieldInfo = model.model_fields.get(field_name)
-        field_type = field_metadata.json_schema_extra.get(WIKIBASE_TYPE)
-        field_prop_id = field_metadata.json_schema_extra.get(CEUR_DEV_ID)
+
+        # Statement-reference field
+        stmt_type = get_statement_field_type(field_metadata.annotation)
+        if stmt_type is not None:
+            subject_field = stmt_type.get_statement_subject(CEUR_DEV_ID)
+            subject_prop_id = stmt_type.model_fields[subject_field].json_schema_extra.get(CEUR_DEV_ID)
+            subject_prop_nr = Wikibase.get_entity_id(subject_prop_id)
+            item.claims.remove(subject_prop_nr)
+            values = field_value if isinstance(field_value, list) else ([field_value] if field_value else [])
+            for stmt in values:
+                if stmt is not None:
+                    claim = create_qualified_statement_from_model(stmt)
+                    item.claims.add(claim, action_if_exists=ActionIfExists.FORCE_APPEND)
+            continue
+
+        extra = _get_schema_extra(field_metadata)
+        if not extra:
+            continue
+        field_type = extra.get(WIKIBASE_TYPE)
+        field_prop_id = extra.get(CEUR_DEV_ID)
         if field_prop_id == "rdfs:label":
             item.labels.set(
                 default_language,
@@ -89,7 +149,6 @@ def update_item_from_model(model: BaseModel, item: ItemEntity):
                 action_if_exists=ActionIfExists.REPLACE_ALL,
             )
         else:
-            # ToDo: Add support for qualifiers e.g. if value is an object and id has prefix p:
             claims = []
             if isinstance(field_value, list):
                 values = field_value
@@ -181,8 +240,20 @@ def get_model_from_item(item: ItemEntity, model: type[BaseModel]) -> BaseModel:
     field_metadata: FieldInfo
     record = {}
     for field_name, field_metadata in model.model_fields.items():
-        # field_type = field_metadata.json_schema_extra.get(WIKIBASE_TYPE)
-        field_prop_id = field_metadata.json_schema_extra.get(CEUR_DEV_ID)
+        # Statement-reference field (list[ScholarSignature], etc.)
+        stmt_type = get_statement_field_type(field_metadata.annotation)
+        if stmt_type is not None:
+            statements = get_models_from_qualified_statement(item, stmt_type)
+            if get_origin(field_metadata.annotation) is list:
+                record[field_name] = statements
+            elif statements:
+                record[field_name] = statements[0]
+            continue
+
+        extra = _get_schema_extra(field_metadata)
+        if not extra:
+            continue
+        field_prop_id = extra.get(CEUR_DEV_ID)
         field_value = None
         if field_prop_id == "rdf:subject":
             field_value = item.id
@@ -268,6 +339,7 @@ def get_model_from_qualified_statement(claim: Claim, model: type[StatementBase])
                         f"supports one value"
                     )
                 record[qualifier_field] = get_snak_value(qualifier[0])
+    print(record)
     model_obj = model.model_validate(record)
     return model_obj
 
