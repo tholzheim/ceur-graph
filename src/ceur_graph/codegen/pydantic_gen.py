@@ -1,7 +1,7 @@
 """Generate Pydantic models from a LinkML schema at runtime."""
 
 from pathlib import Path
-from typing import Any
+from typing import Any, get_origin
 
 import yaml
 from linkml_runtime.utils.schemaview import SchemaView
@@ -115,13 +115,14 @@ def _build_field_def(
 
     if is_stmt_subject:
         default: Any = WikibaseSnakType.UNKNOWN_VALUE.value
+        return py_type, Field(default=default, **field_kwargs)
     elif is_required:
-        default = ...
+        return py_type, Field(default=..., **field_kwargs)
+    elif get_origin(py_type) is list:
+        # Multivalued optional: keep as list[T] with empty-list default (not list[T] | None)
+        return py_type, Field(default_factory=list, **field_kwargs)
     else:
-        py_type = py_type | None
-        default = None
-
-    return py_type, Field(default=default, **field_kwargs)
+        return py_type | None, Field(default=None, **field_kwargs)
 
 
 def _topological_order(view: SchemaView) -> list[str]:

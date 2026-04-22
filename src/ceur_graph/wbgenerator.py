@@ -50,6 +50,18 @@ def _get_schema_extra(field_metadata: FieldInfo) -> dict:
     return extra if isinstance(extra, dict) else {}
 
 
+def _is_list_annotation(annotation) -> bool:
+    """Return True if annotation is list[T] or list[T] | None (Optional list)."""
+    origin = get_origin(annotation)
+    if origin is list:
+        return True
+    if origin is Union or (
+        hasattr(_types_module, "UnionType") and isinstance(annotation, _types_module.UnionType)
+    ):
+        return any(get_origin(arg) is list for arg in get_args(annotation))
+    return False
+
+
 def create_item_from_model(model: BaseModel, wbi: WikibaseIntegrator) -> ItemEntity:
     """
     Create ItemEntity from given object model
@@ -244,7 +256,7 @@ def get_model_from_item(item: ItemEntity, model: type[BaseModel]) -> BaseModel:
         stmt_type = get_statement_field_type(field_metadata.annotation)
         if stmt_type is not None:
             statements = get_models_from_qualified_statement(item, stmt_type)
-            if get_origin(field_metadata.annotation) is list:
+            if _is_list_annotation(field_metadata.annotation):
                 record[field_name] = statements
             elif statements:
                 record[field_name] = statements[0]
@@ -268,7 +280,7 @@ def get_model_from_item(item: ItemEntity, model: type[BaseModel]) -> BaseModel:
         else:
             prop_nr = Wikibase.get_entity_id(field_prop_id)
             claims: list[Claim] = item.claims.get(prop_nr)
-            if get_origin(field_metadata.annotation) is list:
+            if _is_list_annotation(field_metadata.annotation):
                 values = [get_snak_value(claim.mainsnak) for claim in claims]
                 values = [value for value in values if value is not None]
                 field_value = values
@@ -329,7 +341,7 @@ def get_model_from_qualified_statement(claim: Claim, model: type[StatementBase])
             qualifier: list[Snak] = claim.qualifiers.get(field_prop_nr)
             if qualifier is None or len(qualifier) == 0:
                 continue
-            elif get_origin(field_metadata.annotation) is list:
+            elif _is_list_annotation(field_metadata.annotation):
                 values = [get_snak_value(snak) for snak in qualifier]
                 record[qualifier_field] = values
             else:
@@ -339,7 +351,6 @@ def get_model_from_qualified_statement(claim: Claim, model: type[StatementBase])
                         f"supports one value"
                     )
                 record[qualifier_field] = get_snak_value(qualifier[0])
-    print(record)
     model_obj = model.model_validate(record)
     return model_obj
 
