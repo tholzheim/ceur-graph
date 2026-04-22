@@ -5,68 +5,93 @@ export default {
   name: 'ItemSearchInput',
   props: {
     modelValue: { type: String, default: '' },
-    placeholder: { type: String, default: 'Search or enter QID…' },
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
-    const { ref, watch } = Vue
+    const { ref, watch, nextTick } = Vue
 
-    const text = ref(props.modelValue || '')
+    // --- Selected state ---
+    const selectedQid = ref('')
+    const selectedLabel = ref('')
+
+    // --- Search state ---
+    const isSearching = ref(true)
+    const searchText = ref('')
     const suggestions = ref([])
     const activeIdx = ref(-1)
-    const resolvedLabel = ref('')
     const searchError = ref('')
-    const inputEl = ref(null)
-    const dropdownStyle = ref({})
     let debounceTimer = null
 
-    watch(suggestions, val => {
-      if (val.length && inputEl.value) {
-        const rect = inputEl.value.getBoundingClientRect()
-        dropdownStyle.value = {
-          position: 'fixed',
-          top: rect.bottom + 'px',
-          left: rect.left + 'px',
-          width: rect.width + 'px',
-          zIndex: 9999,
-          background: 'var(--card-background-color)',
-          border: '1px solid var(--muted-border-color)',
-          borderRadius: 'var(--border-radius)',
-          maxHeight: '240px',
-          overflowY: 'auto',
-        }
-      }
-    })
+    // --- Initialise from prop ---
+    async function initFromQid(qid) {
+      selectedQid.value = qid
+      selectedLabel.value = ''
+      isSearching.value = false
+      const label = await getLabel(qid)
+      if (selectedQid.value === qid) selectedLabel.value = label
+    }
 
-    async function fetchLabel(qid) {
-      resolvedLabel.value = await getLabel(qid)
+    if (props.modelValue && /^Q\d+$/i.test(props.modelValue)) {
+      initFromQid(props.modelValue)
     }
 
     watch(() => props.modelValue, v => {
-      if (v !== text.value) {
-        text.value = v || ''
-        resolvedLabel.value = ''
-        if (v && /^Q\d+$/i.test(v)) fetchLabel(v)
+      if (v === selectedQid.value) return
+      if (v && /^Q\d+$/i.test(v)) {
+        initFromQid(v)
+      } else {
+        selectedQid.value = ''
+        selectedLabel.value = ''
+        isSearching.value = true
+        searchText.value = ''
+        suggestions.value = []
       }
     })
 
-    // Resolve label on mount if initial value is a QID
-    if (props.modelValue && /^Q\d+$/i.test(props.modelValue)) {
-      fetchLabel(props.modelValue)
+    // --- Mode transitions ---
+    function enterSearch() {
+      searchText.value = selectedLabel.value || selectedQid.value
+      suggestions.value = []
+      searchError.value = ''
+      isSearching.value = true
+      // Auto-trigger search so suggestions appear immediately with the pre-filled text
+      nextTick(() => { if (searchText.value.trim()) onSearchInput() })
     }
 
-    async function onInput() {
+    function cancelSearch() {
+      if (selectedQid.value) {
+        isSearching.value = false
+      } else {
+        searchText.value = ''
+        suggestions.value = []
+      }
+    }
+
+    function select(item) {
+      selectedQid.value = item.id
+      selectedLabel.value = item.label || ''
+      suggestions.value = []
+      isSearching.value = false
+      emit('update:modelValue', item.id)
+    }
+
+    async function confirmQid(qid) {
+      selectedQid.value = qid
+      selectedLabel.value = ''
+      isSearching.value = false
+      suggestions.value = []
+      emit('update:modelValue', qid)
+      const label = await getLabel(qid)
+      if (selectedQid.value === qid) selectedLabel.value = label
+    }
+
+    // --- Search input handlers ---
+    async function onSearchInput() {
       activeIdx.value = -1
       clearTimeout(debounceTimer)
       searchError.value = ''
-      resolvedLabel.value = ''
-      const q = text.value.trim()
+      const q = searchText.value.trim()
       if (!q) { suggestions.value = []; return }
-      if (q.match(/^Q\d+$/i)) {
-        suggestions.value = []
-        fetchLabel(q)
-        return
-      }
       debounceTimer = setTimeout(async () => {
         try {
           suggestions.value = await apiFetch(`/api/entity-search?q=${encodeURIComponent(q)}&limit=8`) || []
@@ -78,43 +103,67 @@ export default {
       }, 300)
     }
 
-    function select(item) {
-      text.value = item.id
-      resolvedLabel.value = item.label || ''
-      suggestions.value = []
-      emit('update:modelValue', item.id)
-    }
-
     function onBlur() {
-      setTimeout(() => { suggestions.value = [] }, 150)
-      emit('update:modelValue', text.value.trim())
+      setTimeout(() => {
+        const q = searchText.value.trim()
+        if (q.match(/^Q\d+$/i)) {
+          confirmQid(q)
+        } else if (selectedQid.value) {
+          isSearching.value = false
+        }
+        suggestions.value = []
+      }, 150)
     }
 
     function onKey(e) {
+      if (e.key === 'Enter') {
+        if (activeIdx.value >= 0 && suggestions.value[activeIdx.value]) {
+          select(suggestions.value[activeIdx.value])
+          e.preventDefault()
+        } else {
+          const q = searchText.value.trim()
+          if (q.match(/^Q\d+$/i)) { confirmQid(q); e.preventDefault() }
+        }
+        return
+      }
       if (!suggestions.value.length) return
       if (e.key === 'ArrowDown') { activeIdx.value = Math.min(activeIdx.value + 1, suggestions.value.length - 1); e.preventDefault() }
       else if (e.key === 'ArrowUp') { activeIdx.value = Math.max(activeIdx.value - 1, 0); e.preventDefault() }
-      else if (e.key === 'Enter' && activeIdx.value >= 0) { select(suggestions.value[activeIdx.value]); e.preventDefault() }
-      else if (e.key === 'Escape') { suggestions.value = [] }
+      else if (e.key === 'Escape') { suggestions.value = []; if (selectedQid.value) isSearching.value = false }
     }
 
-    return { text, suggestions, activeIdx, resolvedLabel, searchError, inputEl, dropdownStyle, onInput, select, onBlur, onKey }
+    return {
+      selectedQid, selectedLabel, isSearching,
+      searchText, suggestions, activeIdx, searchError,
+      enterSearch, cancelSearch, select, onSearchInput, onBlur, onKey,
+    }
   },
   template: `
     <div class="search-wrap">
-      <input
-        ref="inputEl"
-        v-model="text"
-        type="text"
-        :placeholder="placeholder"
-        @input="onInput"
-        @blur="onBlur"
-        @keydown="onKey"
-        autocomplete="off"
-        style="margin:0"
-      />
-      <teleport to="body">
-        <div v-if="suggestions.length" :style="dropdownStyle">
+      <!-- Selected mode: chip -->
+      <div v-if="!isSearching && selectedQid" class="item-chip">
+        <span class="item-chip-label">{{ selectedLabel || selectedQid }}</span>
+        <span class="item-chip-id">({{ selectedQid }})</span>
+        <button class="item-chip-edit" type="button" @click="enterSearch" title="Change">✎</button>
+      </div>
+
+      <!-- Search mode -->
+      <template v-else>
+        <div style="display:flex;gap:0.4rem;align-items:center">
+          <input
+            v-model="searchText"
+            type="text"
+            placeholder="Search by label or enter QID…"
+            @input="onSearchInput"
+            @blur="onBlur"
+            @keydown="onKey"
+            autocomplete="off"
+            style="margin:0;flex:1"
+          />
+          <button v-if="selectedQid" class="secondary outline" type="button"
+                  style="padding:0.2rem 0.5rem;margin:0" @click="cancelSearch" title="Cancel">✕</button>
+        </div>
+        <div v-if="suggestions.length" class="suggestions">
           <div
             v-for="(s, i) in suggestions"
             :key="s.id"
@@ -127,9 +176,8 @@ export default {
             <br><span class="suggestion-desc">{{ s.description }}</span>
           </div>
         </div>
-      </teleport>
-      <small v-if="resolvedLabel" style="color:var(--muted-color)">{{ resolvedLabel }}</small>
-      <small v-if="searchError" style="color:var(--del-color)">{{ searchError }}</small>
+        <small v-if="searchError" style="color:var(--del-color)">{{ searchError }}</small>
+      </template>
     </div>
   `
 }

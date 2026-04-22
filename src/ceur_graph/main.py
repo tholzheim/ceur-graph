@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 from typing import Annotated
 
@@ -12,7 +13,25 @@ from ceur_graph.api.auth import login_user
 from ceur_graph.api.frontend import router as frontend_router
 from ceur_graph.codegen import get_routers
 
-logging.basicConfig(level=logging.INFO)
+
+def _setup_logging() -> None:
+    level = logging.getLevelName(os.getenv("LOG_LEVEL", "DEBUG").upper())
+    handler = logging.StreamHandler()
+    handler.setFormatter(
+        logging.Formatter(
+            "%(asctime)s %(levelname)-8s %(name)s - %(message)s",
+            datefmt="%Y-%m-%dT%H:%M:%S",
+        )
+    )
+    root = logging.getLogger()
+    root.setLevel(level)
+    root.addHandler(handler)
+    # Suppress noisy third-party loggers
+    for noisy in ("httpx", "httpcore", "hpack", "wikibaseintegrator"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
+    logging.basicConfig(level=level)
+
+_setup_logging()
 
 app = FastAPI()
 

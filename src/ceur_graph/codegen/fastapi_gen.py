@@ -68,7 +68,7 @@ def _item_router(ep: dict, models: dict) -> APIRouter:
         return handle_item_creation(wikibase=kw["ceur_dev"], model_obj=kw["body"], target_model=ReadModel)
 
     router.post("/", response_model=ReadModel, status_code=status.HTTP_201_CREATED)(
-        _make_handler([("body", Annotated[CreateModel, Body(embed=True)]), ("ceur_dev", _AUTH)], _create)
+        _make_handler([("body", Annotated[CreateModel, Body()]), ("ceur_dev", _AUTH)], _create)
     )
 
     def _get(**kw):
@@ -88,7 +88,7 @@ def _item_router(ep: dict, models: dict) -> APIRouter:
 
     router.put(f"/{{{id_param}}}", response_model=ReadModel, status_code=status.HTTP_200_OK)(
         _make_handler(
-            [(id_param, _QID), ("body", Annotated[UpdateModel, Body(embed=True)]), ("ceur_dev", _AUTH)],
+            [(id_param, _QID), ("body", Annotated[UpdateModel, Body()]), ("ceur_dev", _AUTH)],
             _update,
         )
     )
@@ -142,7 +142,7 @@ def _statement_router(ep: dict, models: dict) -> APIRouter:
 
     router.post("/", response_model=ReadModel, status_code=status.HTTP_200_OK)(
         _make_handler(
-            [(parent_param, _QID), ("ceur_dev", _AUTH), ("body", Annotated[CreateModel, Body(embed=True)])],
+            [(parent_param, _QID), ("ceur_dev", _AUTH), ("body", Annotated[CreateModel, Body()])],
             _create,
         )
     )
@@ -174,7 +174,7 @@ def _statement_router(ep: dict, models: dict) -> APIRouter:
             [
                 (parent_param, _QID),
                 ("statement_id", str),
-                ("body", Annotated[UpdateModel, Body(embed=True)]),
+                ("body", Annotated[UpdateModel, Body()]),
                 ("ceur_dev", _AUTH),
             ],
             _update,

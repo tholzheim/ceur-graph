@@ -1,10 +1,10 @@
-import { createApp, ref, reactive, computed, watch } from 'vue'
+import { createApp, ref, reactive, computed, watch, nextTick } from 'vue'
 import { apiFetch } from './api.js'
 import LoginForm from './components/LoginForm.js'
 import EntityEditor from './components/EntityEditor.js'
 
 // Expose Vue composition API globally so component files can do `const { ref } = Vue`
-window.Vue = { ref, reactive, computed, watch }
+window.Vue = { ref, reactive, computed, watch, nextTick }
 
 const App = {
   components: { LoginForm, EntityEditor },

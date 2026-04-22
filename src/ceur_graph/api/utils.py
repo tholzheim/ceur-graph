@@ -83,6 +83,7 @@ def handle_item_update(
     :return:
     """
     try:
+        logger.info(f"Updating item {item_id} ({model_obj})")
         item: ItemEntity = wikibase.get_item(item_id)
         update_item_from_model(model=model_obj, item=item)
         updated_item = wikibase.write_item(item, summary=f"Updates {get_model_label(target_model)} statements")
@@ -201,6 +202,7 @@ def handle_statement_update(
     :return:
     """
     try:
+        logger.info(f"Updating statement {statement_id} ({model_obj})")
         item: ItemEntity = wikibase.get_item(item_id)
         update_qualified_statement_from_model(item=item, statement_id=statement_id, model=model_obj)
         # Check if modification would invalidate the model → error is raised if invalid

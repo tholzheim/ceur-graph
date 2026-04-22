@@ -184,7 +184,7 @@ export default {
 
       <!-- Dialog -->
       <dialog :open="dialogOpen">
-        <article>
+        <article style="overflow: visible">
           <header>
             <button rel="prev" @click="closeDialog"></button>
             <strong>{{ editingRow ? 'Edit' : 'Add' }} {{ field.label }}</strong>
