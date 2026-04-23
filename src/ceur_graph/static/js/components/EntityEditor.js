@@ -23,6 +23,10 @@ export default {
     const success = ref('')
     const commitOpen = ref(false)
 
+    // Pending statement changes collected from child StatementListEditors
+    const pendingStatements = reactive({})
+    const clearSignal = ref(0)
+
     // schema is the flat list returned by /api/schema/entities
     const entities = computed(() => Array.isArray(props.schema) ? props.schema : (props.schema?.entities ?? []))
     const selectedEntity = computed(() =>
@@ -39,6 +43,8 @@ export default {
     function resetForm() {
       loadedData.value = null
       Object.keys(pendingData).forEach(k => delete pendingData[k])
+      Object.keys(pendingStatements).forEach(k => delete pendingStatements[k])
+      clearSignal.value++
       if (selectedEntity.value) {
         selectedEntity.value.fields.forEach(f => {
           if (f.field_type === 'statement_list') return
@@ -65,7 +71,8 @@ export default {
         if (!data) return
         loadedData.value = data
         isNew.value = false
-        // Populate pendingData with loaded values
+        Object.keys(pendingStatements).forEach(k => delete pendingStatements[k])
+        clearSignal.value++
         Object.keys(pendingData).forEach(k => delete pendingData[k])
         selectedEntity.value.fields.forEach(f => {
           if (f.field_type === 'statement_list') return
@@ -84,10 +91,21 @@ export default {
       resetForm()
     }
 
+    function onPendingChange(fieldName, ops, fieldConfig) {
+      if (ops.length === 0) {
+        delete pendingStatements[fieldName]
+      } else {
+        pendingStatements[fieldName] = { ops, field: fieldConfig }
+      }
+    }
+
     function onSaved(entity) {
       loadedData.value = entity
       if (entity?.qid) qidInput.value = entity.qid
       isNew.value = false
+      // Clear pending statements after successful commit
+      Object.keys(pendingStatements).forEach(k => delete pendingStatements[k])
+      clearSignal.value++
       success.value = `Saved! QID: ${entity?.qid ?? '(unknown)'}`
       setTimeout(() => { success.value = '' }, 5000)
     }
@@ -101,6 +119,7 @@ export default {
       entities, selectedEntityName, selectedEntity, simpleFields, statementFields,
       qidInput, loadedData, pendingData, isNew, loadError, loadLoading, success, commitOpen,
       loadedQid, load, startNew, onSaved, logout,
+      pendingStatements, clearSignal, onPendingChange,
     }
   },
   template: `
@@ -153,11 +172,16 @@ export default {
             <button @click="commitOpen = true">Commit changes…</button>
           </div>
 
-          <!-- Statement list editors (shown only when entity has a QID) -->
+          <!-- Statement list editors -->
           <template v-for="f in statementFields" :key="f.name">
             <hr>
             <h4>{{ f.label }}</h4>
-            <statement-list-editor :field="f" :parent-qid="loadedQid" />
+            <statement-list-editor
+              :field="f"
+              :parent-qid="loadedQid"
+              :clear-signal="clearSignal"
+              @update:pending="(name, ops, fc) => onPendingChange(name, ops, fc)"
+            />
           </template>
         </template>
 
@@ -173,6 +197,7 @@ export default {
         :loaded-data="loadedData"
         :is-new="isNew"
         :entity-config="selectedEntity ?? {}"
+        :pending-statements="pendingStatements"
         @close="commitOpen = false"
         @saved="onSaved"
       />

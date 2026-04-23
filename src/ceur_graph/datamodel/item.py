@@ -10,7 +10,24 @@ CEUR_DEV_ID = "CEUR_DEV_ID"
 WIKIDATA_ID = "WIKIDATA_ID"
 
 
-class ItemBase(BaseModel):
+class _EmptyStringsMixin(BaseModel):
+    @model_validator(mode='before')
+    @classmethod
+    def _coerce_empty_strings(cls, data):
+        if not isinstance(data, dict):
+            return data
+        cleaned = {}
+        for k, v in data.items():
+            if v == '':
+                cleaned[k] = None
+            elif isinstance(v, list):
+                cleaned[k] = [x for x in v if x != '' and x is not None]
+            else:
+                cleaned[k] = v
+        return cleaned
+
+
+class ItemBase(_EmptyStringsMixin):
     """
     Wikibase item model
     """
@@ -25,12 +42,12 @@ class ItemBase(BaseModel):
     ]
 
 
-class EntityBase(BaseModel):
+class EntityBase(_EmptyStringsMixin):
     label: Annotated[str, Field(json_schema_extra={CEUR_DEV_ID: "rdfs:label"})]
     description: Annotated[str, Field(json_schema_extra={CEUR_DEV_ID: "schema:description"})]
 
 
-class StatementBase(BaseModel):
+class StatementBase(_EmptyStringsMixin):
     @classmethod
     def get_statement_subject(cls, lookup_key: str) -> str:
         """
@@ -107,6 +124,8 @@ class ExtractedStatement(StatementBase):
     def __eq__(self, other):
         other_object_named_as = getattr(other, "object_named_as", None)
         if None in [self.object_named_as, other_object_named_as]:
+            if isinstance(other, str):
+                return False
             stmt_object_field = self.get_statement_subject(CEUR_DEV_ID)
             return getattr(self, stmt_object_field) == getattr(other, stmt_object_field)
         else:
