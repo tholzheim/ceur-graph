@@ -1,53 +1,76 @@
-import ItemSearchInput from './ItemSearchInput.js'
+import { useI18n } from "../i18n.js";
+import ItemSearchInput from "./ItemSearchInput.js";
 
 export default {
-  name: 'FieldInput',
+  name: "FieldInput",
   components: { ItemSearchInput },
   props: {
     field: { type: Object, required: true },
     modelValue: { default: null },
   },
-  emits: ['update:modelValue'],
+  emits: ["update:modelValue"],
   setup(props, { emit }) {
-    const { computed } = Vue
+    const { computed } = Vue;
+    const { t } = useI18n();
 
-    const isItem = computed(() => props.field.wikibase_type === 'wikibase-item')
-    const isNumber = computed(() => props.field.wikibase_type === 'quantity')
-    const isUrl = computed(() => props.field.wikibase_type === 'url')
-    const isList = computed(() => props.field.field_type === 'list')
+    const isItem = computed(
+      () => props.field.wikibase_type === "wikibase-item",
+    );
+    const isNumber = computed(() => props.field.wikibase_type === "quantity");
+    const isUrl = computed(() => props.field.wikibase_type === "url");
+    const isList = computed(() => props.field.field_type === "list");
 
     const inputType = computed(() => {
-      if (isNumber.value) return 'number'
-      if (isUrl.value) return 'url'
-      return 'text'
-    })
+      if (isNumber.value) return "number";
+      if (isUrl.value) return "url";
+      return "text";
+    });
 
     const listVal = computed(() => {
-      if (!isList.value) return []
-      return Array.isArray(props.modelValue) ? props.modelValue : (props.modelValue ? [props.modelValue] : [''])
-    })
+      if (!isList.value) return [];
+      return Array.isArray(props.modelValue)
+        ? props.modelValue
+        : props.modelValue
+          ? [props.modelValue]
+          : [""];
+    });
 
     function updateList(idx, newVal) {
-      const arr = [...listVal.value]
-      arr[idx] = newVal
-      emit('update:modelValue', arr)
+      const arr = [...listVal.value];
+      arr[idx] = newVal;
+      emit("update:modelValue", arr);
     }
 
     function addListItem() {
-      emit('update:modelValue', [...listVal.value, ''])
+      emit("update:modelValue", [...listVal.value, ""]);
     }
 
     function removeListItem(idx) {
-      const arr = listVal.value.filter((_, i) => i !== idx)
-      emit('update:modelValue', arr.length ? arr : [''])
+      const arr = listVal.value.filter((_, i) => i !== idx);
+      emit("update:modelValue", arr.length ? arr : [""]);
     }
 
     function onSingle(e) {
-      const v = e.target ? e.target.value : e
-      emit('update:modelValue', isNumber.value ? (v === '' ? null : Number(v)) : v)
+      const v = e.target ? e.target.value : e;
+      emit(
+        "update:modelValue",
+        isNumber.value ? (v === "" ? null : Number(v)) : v,
+      );
     }
 
-    return { isItem, isNumber, isUrl, isList, inputType, listVal, updateList, addListItem, removeListItem, onSingle }
+    return {
+      isItem,
+      isNumber,
+      isUrl,
+      isList,
+      inputType,
+      listVal,
+      updateList,
+      addListItem,
+      removeListItem,
+      onSingle,
+      t,
+    };
   },
   template: `
     <div>
@@ -68,7 +91,7 @@ export default {
           />
           <button class="outline" style="padding:0.3rem 0.6rem;margin:0" @click.prevent="removeListItem(idx)">✕</button>
         </div>
-        <button class="secondary outline" style="padding:0.3rem 0.75rem" @click.prevent="addListItem">+ Add</button>
+        <button class="secondary outline" style="padding:0.3rem 0.75rem" @click.prevent="addListItem">{{ t('field_add_item') }}</button>
       </template>
 
       <!-- Single item field -->
@@ -87,5 +110,5 @@ export default {
         style="margin:0"
       />
     </div>
-  `
-}
+  `,
+};

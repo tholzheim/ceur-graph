@@ -161,23 +161,44 @@ def update_item_from_model(model: BaseModel, item: ItemEntity):
                 action_if_exists=ActionIfExists.REPLACE_ALL,
             )
         else:
-            claims = []
-            if isinstance(field_value, list):
-                values = field_value
-            else:
-                values = [field_value]
-            for value in values:
-                claim = get_claim(
-                    prop_id=field_prop_id,
-                    datatype=field_type,
-                    value=value,
-                    language=default_language,
+            is_list = _is_list_annotation(field_metadata.annotation)
+            values = field_value if isinstance(field_value, list) else [field_value]
+            claims = [
+                c
+                for c in (
+                    get_claim(prop_id=field_prop_id, datatype=field_type, value=v, language=default_language)
+                    for v in values
                 )
-                if claim is not None:
-                    claims.append(claim)
-            if claims:
-                item.claims.remove(field_prop_id)
+                if c is not None
+            ]
+            if not claims:
+                continue
+
+            prop_nr = Wikibase.get_entity_id(field_prop_id)
+
+            if is_list:
+                item.claims.remove(prop_nr)
                 item.claims.add(claims)
+            elif field_type == datatypes.MonolingualText.DTYPE:
+                existing = item.claims.get(prop_nr)
+                matched = next(
+                    (
+                        c
+                        for c in existing
+                        if c.mainsnak.datavalue.get("value", {}).get("language") == default_language
+                    ),
+                    None,
+                )
+                if matched is not None:
+                    matched.mainsnak = claims[0].mainsnak
+                else:
+                    item.claims.add(claims[0], action_if_exists=ActionIfExists.FORCE_APPEND)
+            else:
+                existing = item.claims.get(prop_nr)
+                if existing:
+                    existing[0].mainsnak = claims[0].mainsnak
+                else:
+                    item.claims.add(claims[0])
 
 
 def get_claim(prop_id: str, datatype: str, value: Any, language: str | None = None) -> Claim | None:
@@ -279,13 +300,24 @@ def get_model_from_item(item: ItemEntity, model: type[BaseModel]) -> BaseModel:
                 field_value = description.value
         else:
             prop_nr = Wikibase.get_entity_id(field_prop_id)
+            field_type = extra.get(WIKIBASE_TYPE)
             claims: list[Claim] = item.claims.get(prop_nr)
             if _is_list_annotation(field_metadata.annotation):
                 values = [get_snak_value(claim.mainsnak) for claim in claims]
                 values = [value for value in values if value is not None]
                 field_value = values
             else:
-                claim = claims[0] if claims else None
+                if field_type == datatypes.MonolingualText.DTYPE:
+                    claim = next(
+                        (
+                            c
+                            for c in claims
+                            if c.mainsnak.datavalue.get("value", {}).get("language") == default_language
+                        ),
+                        claims[0] if claims else None,
+                    )
+                else:
+                    claim = claims[0] if claims else None
                 if claim is not None:
                     field_value = get_snak_value(claim.mainsnak)
         if field_value is not None:
@@ -325,7 +357,7 @@ def get_model_from_qualified_statement(claim: Claim, model: type[StatementBase])
     if claim.mainsnak.snaktype is WikibaseSnakType.UNKNOWN_VALUE:
         record[subject_field] = WikibaseSnakType.UNKNOWN_VALUE.value
     elif claim.mainsnak.snaktype is WikibaseSnakType.NO_VALUE:
-        return None
+        record[subject_field] = WikibaseSnakType.NO_VALUE.value
     else:
         record[subject_field] = get_snak_value(claim.mainsnak)
     if issubclass(model, Statement):
@@ -410,14 +442,16 @@ def create_qualified_statement_from_model(model: StatementBase) -> Claim:
     subject_prop_id = model.model_fields.get(subject_field).json_schema_extra.get(CEUR_DEV_ID)
     subject_prop_nr = Wikibase.get_entity_id(subject_prop_id)
     claim: Claim
-    print(getattr(model, subject_field))
-    if getattr(model, subject_field) == WikibaseSnakType.UNKNOWN_VALUE.value:
+    subject_val = getattr(model, subject_field)
+    if subject_val == WikibaseSnakType.UNKNOWN_VALUE.value:
         claim = BaseDataType(prop_nr=subject_prop_nr, snaktype=WikibaseSnakType.UNKNOWN_VALUE)
+    elif subject_val == WikibaseSnakType.NO_VALUE.value:
+        claim = BaseDataType(prop_nr=subject_prop_nr, snaktype=WikibaseSnakType.NO_VALUE)
     else:
         claim = get_claim(
             prop_id=subject_prop_nr,
             datatype=model.model_fields.get(subject_field).json_schema_extra.get(WIKIBASE_TYPE),
-            value=getattr(model, subject_field),
+            value=subject_val,
         )
     add_qualifier_values_to_statement(claim, model)
     return claim
@@ -523,6 +557,11 @@ def update_qualified_statement_from_model(item: ItemEntity, statement_id: str, m
             and statement_object_value == WikibaseSnakType.UNKNOWN_VALUE.value
         ):
             new_mainsnak = BaseDataType(prop_nr=statement_prop_nr, snaktype=WikibaseSnakType.UNKNOWN_VALUE)
+        elif (
+            issubclass(model.__class__, ExtractedStatement)
+            and statement_object_value == WikibaseSnakType.NO_VALUE.value
+        ):
+            new_mainsnak = BaseDataType(prop_nr=statement_prop_nr, snaktype=WikibaseSnakType.NO_VALUE)
         else:
             new_mainsnak = get_claim(
                 prop_id=statement_prop_id,

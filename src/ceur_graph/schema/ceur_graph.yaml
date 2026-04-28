@@ -27,6 +27,12 @@ slots:
       wikidata_id: "http://www.wikidata.org/prop/direct/P1476"
       wikibase_type: monolingualtext
 
+  object_named_as:
+    range: string
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P91"
+      wikibase_type: string
+
   dblp_publication_id:
     range: string
     annotations:
@@ -281,6 +287,7 @@ classes:
   ScholarSignature:
     annotations:
       python_base: extracted_statement
+      enforce_unknown_stmt_name: true
     slots:
       - scholar_id
       - series_ordinal
@@ -288,6 +295,7 @@ classes:
       - affiliation_string
       - affiliation
       - dblp_author_id
+      - object_named_as
 
   EditorSignature:
     is_a: ScholarSignature
@@ -303,8 +311,10 @@ classes:
     annotations:
       python_base: extracted_statement
       model_title: Subject
+      enforce_unknown_stmt_name: true
     slots:
       - subject_id
+      - object_named_as
 
   Reference:
     annotations:

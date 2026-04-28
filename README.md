@@ -21,6 +21,26 @@ uv run ruff format
 ```
 
 
+## Frontend tooling
+
+JavaScript files in `src/ceur_graph/static/js/` are checked with [Biome](https://biomejs.dev) (requires Node ≥ 18).
+
+Install once:
+```shell
+npm install -g @biomejs/biome
+```
+
+Check formatting and linting:
+```shell
+biome check src/ceur_graph/static/js/
+```
+
+Auto-fix (format + safe lint fixes):
+```shell
+biome check --write src/ceur_graph/static/js/
+```
+
+
 ## Docker Support
 
 CEUR-Graph can be easily deployed using Docker.

@@ -17,7 +17,7 @@ _STATIC_DIR = Path(__file__).parent.parent / "static"
 
 router = APIRouter()
 
-_SKIP_FIELDS = {"qid", "statement_id", "object_named_as"}
+_SKIP_FIELDS = {"qid", "statement_id"}
 _INTERNAL_WB_IDS = {"rdf:subject", "rdfs:label", "schema:description"}
 
 
@@ -40,6 +40,7 @@ def _label(name: str) -> str:
 
 
 def _build_statement_fields(stmt_cls: type) -> list[dict]:
+    subject_field_name = stmt_cls.get_statement_subject(CEUR_DEV_ID)
     fields = []
     for fname, finfo in stmt_cls.model_fields.items():
         if fname in _SKIP_FIELDS:
@@ -48,13 +49,18 @@ def _build_statement_fields(stmt_cls: type) -> list[dict]:
         ceur_id = extra.get(CEUR_DEV_ID, "")
         if ceur_id in _INTERNAL_WB_IDS:
             continue
-        fields.append({
+        entry = {
             "name": fname,
             "label": _label(fname),
             "wikibase_type": _wikibase_type(finfo),
             "field_type": "list" if _is_list_annotation(finfo.annotation) else "single",
             "required": finfo.is_required(),
-        })
+        }
+        if fname == subject_field_name:
+            entry["is_subject"] = True
+        if fname == "object_named_as":
+            entry["is_object_named_as"] = True
+        fields.append(entry)
     return fields
 
 
@@ -103,6 +109,7 @@ def _build_entity_schema(
                 "statement_model": stmt_name,
                 "statement_endpoint": stmt_endpoint["prefix"] if stmt_endpoint else None,
                 "statement_fields": _build_statement_fields(stmt_type),
+                "enforce_unknown_stmt_name": bool(getattr(stmt_type, "_enforce_unknown_stmt_name", False)),
             })
             continue
 

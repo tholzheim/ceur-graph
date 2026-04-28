@@ -132,7 +132,7 @@ class ExtractedStatement(StatementBase):
             return self.object_named_as == other_object_named_as
 
 
-ItemStatementSubjectType = Literal["somevalue"] | constr(pattern=r"^Q\d+$")
+ItemStatementSubjectType = Literal["somevalue", "novalue"] | constr(pattern=r"^Q\d+$")
 
 
 class Coordinate(BaseModel):

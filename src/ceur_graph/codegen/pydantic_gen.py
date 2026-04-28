@@ -199,12 +199,15 @@ def generate_models(schema_path: Path) -> dict[str, type]:
             field_defs[slot_name] = (py_type, field_info)
 
         model_title = _ann_dict(cls_def.annotations).get("model_title")
-        if model_title:
-            base_cls = type(
-                f"_{class_name}Configured",
-                (base_cls,),
-                {"model_config": ConfigDict(title=model_title), "__module__": "ceur_graph.codegen"},
-            )
+        _raw_enforce = _ann_dict(cls_def.annotations).get("enforce_unknown_stmt_name", False)
+        enforce_stmt_name = _raw_enforce is True or (isinstance(_raw_enforce, str) and _raw_enforce.lower() == "true")
+        if model_title or enforce_stmt_name:
+            extra_attrs: dict = {"__module__": "ceur_graph.codegen"}
+            if model_title:
+                extra_attrs["model_config"] = ConfigDict(title=model_title)
+            if enforce_stmt_name:
+                extra_attrs["_enforce_unknown_stmt_name"] = True
+            base_cls = type(f"_{class_name}Configured", (base_cls,), extra_attrs)
 
         base_model = create_model(
             f"{class_name}Base",
