@@ -203,3 +203,8 @@ async def entity_label(qid: str = Query(...), language: str = "en") -> dict:
 @router.get("/")
 def serve_index() -> FileResponse:
     return FileResponse(_STATIC_DIR / "index.html")
+
+
+@router.get("/form/{path:path}")
+def serve_form(path: str) -> FileResponse:
+    return FileResponse(_STATIC_DIR / "index.html")

@@ -12,7 +12,7 @@ export default {
   },
   emits: ["logout"],
   setup(props, { emit }) {
-    const { ref, reactive, computed, watch } = Vue;
+    const { ref, reactive, computed, watch, onMounted, nextTick } = Vue;
     const { t, locale, setLocale } = useI18n();
 
     const selectedEntityName = ref("");
@@ -28,6 +28,17 @@ export default {
     // Pending statement changes collected from child StatementListEditors
     const pendingStatements = reactive({});
     const clearSignal = ref(0);
+
+    function parseFormUrl() {
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      if (parts[0] !== 'form') return null;
+      return { entitySlug: parts[1] ?? null, action: parts[2] ?? null };
+    }
+
+    function pushFormUrl(entitySlug, action = null) {
+      const path = action ? `/form/${entitySlug}/${action}` : `/form/${entitySlug}`;
+      history.pushState(null, '', path);
+    }
 
     // schema is the flat list returned by /api/schema/entities
     const entities = computed(() =>
@@ -68,10 +79,15 @@ export default {
       success.value = "";
     }
 
+    let initializing = false;
+
     watch(selectedEntityName, () => {
       qidInput.value = "";
       isNew.value = false;
       resetForm();
+      if (!initializing && selectedEntityName.value) {
+        pushFormUrl(selectedEntityName.value.toLowerCase());
+      }
     });
 
     async function load() {
@@ -84,6 +100,7 @@ export default {
         if (!data) return;
         loadedData.value = data;
         isNew.value = false;
+        pushFormUrl(selectedEntityName.value.toLowerCase(), qidInput.value.trim());
         Object.keys(pendingStatements).forEach(
           (k) => delete pendingStatements[k],
         );
@@ -105,6 +122,9 @@ export default {
       qidInput.value = "";
       isNew.value = true;
       resetForm();
+      if (selectedEntityName.value) {
+        pushFormUrl(selectedEntityName.value.toLowerCase(), 'new');
+      }
     }
 
     function onPendingChange(fieldName, ops, fieldConfig) {
@@ -117,7 +137,10 @@ export default {
 
     function onSaved(entity) {
       loadedData.value = entity;
-      if (entity?.qid) qidInput.value = entity.qid;
+      if (entity?.qid) {
+        qidInput.value = entity.qid;
+        history.replaceState(null, '', `/form/${selectedEntityName.value.toLowerCase()}/${entity.qid}`);
+      }
       isNew.value = false;
       // Clear pending statements after successful commit
       Object.keys(pendingStatements).forEach(
@@ -134,6 +157,25 @@ export default {
       localStorage.removeItem("token");
       emit("logout");
     }
+
+    onMounted(async () => {
+      const parsed = parseFormUrl();
+      if (!parsed?.entitySlug) return;
+      const match = entities.value.find(
+        (e) => e.name.toLowerCase() === parsed.entitySlug.toLowerCase(),
+      );
+      if (!match) return;
+      initializing = true;
+      selectedEntityName.value = match.name;
+      await nextTick();
+      initializing = false;
+      if (parsed.action === 'new') {
+        startNew();
+      } else if (parsed.action) {
+        qidInput.value = parsed.action;
+        await load();
+      }
+    });
 
     return {
       entities,
