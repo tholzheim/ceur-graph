@@ -19,18 +19,18 @@ export default {
     const loading = ref(false);
     const error = ref("");
 
+    function toComparableString(value) {
+      if (value == null) return null;
+      return Array.isArray(value) ? value.join(", ") : String(value);
+    }
+
     const changedFields = computed(() => {
       const fields = [];
       for (const [k, v] of Object.entries(props.pendingData)) {
         if (v == null || v === "" || (Array.isArray(v) && !v.length)) continue;
         const oldVal = props.loadedData?.[k];
-        const newStr = Array.isArray(v) ? v.join(", ") : String(v);
-        const oldStr =
-          oldVal != null
-            ? Array.isArray(oldVal)
-              ? oldVal.join(", ")
-              : String(oldVal)
-            : null;
+        const newStr = toComparableString(v);
+        const oldStr = toComparableString(oldVal);
         if (newStr !== oldStr) {
           fields.push({
             name: k,

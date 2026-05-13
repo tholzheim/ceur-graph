@@ -182,9 +182,10 @@ def generate_models(schema_path: Path) -> dict[str, type]:
         else:
             base_cls = root_base_cls
 
-        own_slots: set[str] = set(cls_def.slots or [])
-        overridden_slots: set[str] = set(cls_def.slot_usage.keys() if cls_def.slot_usage else [])
-        slots_to_gen = own_slots | overridden_slots
+        own_slots_ordered: list[str] = list(cls_def.slots or [])
+        own_slots_set = set(own_slots_ordered)
+        slot_usage_only: list[str] = [s for s in (cls_def.slot_usage or {}) if s not in own_slots_set]
+        slots_to_gen = own_slots_ordered + slot_usage_only
 
         field_defs: dict[str, tuple[Any, Any]] = {}
         for slot_name in slots_to_gen:
