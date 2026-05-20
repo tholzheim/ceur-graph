@@ -86,6 +86,7 @@ const messages = {
     search_placeholder: "Search by label or enter QID…",
     search_change: "Change",
     search_cancel: "Cancel",
+    search_clear: "Clear",
     search_failed: "Search failed",
   },
   de: {
@@ -157,6 +158,7 @@ const messages = {
     search_placeholder: "Nach Label suchen oder QID eingeben…",
     search_change: "Ändern",
     search_cancel: "Abbrechen",
+    search_clear: "Löschen",
     search_failed: "Suche fehlgeschlagen",
   },
 };

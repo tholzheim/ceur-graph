@@ -149,19 +149,25 @@ def update_item_from_model(model: BaseModel, item: ItemEntity):
         field_type = extra.get(WIKIBASE_TYPE)
         field_prop_id = extra.get(CEUR_DEV_ID)
         if field_prop_id == "rdfs:label":
-            item.labels.set(
-                default_language,
-                field_value,
-                action_if_exists=ActionIfExists.REPLACE_ALL,
-            )
+            if field_value is not None:
+                item.labels.set(
+                    default_language,
+                    field_value,
+                    action_if_exists=ActionIfExists.REPLACE_ALL,
+                )
         elif field_prop_id == "schema:description":
-            item.descriptions.set(
-                default_language,
-                field_value,
-                action_if_exists=ActionIfExists.REPLACE_ALL,
-            )
+            if field_value is not None:
+                item.descriptions.set(
+                    default_language,
+                    field_value,
+                    action_if_exists=ActionIfExists.REPLACE_ALL,
+                )
         else:
             is_list = _is_list_annotation(field_metadata.annotation)
+            if field_value is None:
+                prop_nr = Wikibase.get_entity_id(field_prop_id)
+                item.claims.remove(prop_nr)
+                continue
             values = field_value if isinstance(field_value, list) else [field_value]
             claims = [
                 c

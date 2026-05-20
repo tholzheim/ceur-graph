@@ -27,18 +27,19 @@ export default {
     const changedFields = computed(() => {
       const fields = [];
       for (const [k, v] of Object.entries(props.pendingData)) {
-        if (v == null || v === "" || (Array.isArray(v) && !v.length)) continue;
+        const isEmpty = v == null || v === "" || (Array.isArray(v) && !v.length);
         const oldVal = props.loadedData?.[k];
-        const newStr = toComparableString(v);
+        const wasEmpty = oldVal == null || oldVal === "" || (Array.isArray(oldVal) && !oldVal.length);
+        if (isEmpty && wasEmpty) continue;
+        const newStr = isEmpty ? null : toComparableString(v);
         const oldStr = toComparableString(oldVal);
-        if (newStr !== oldStr) {
-          fields.push({
-            name: k,
-            label: k.replace(/_/g, " "),
-            oldVal: oldStr,
-            newVal: newStr,
-          });
-        }
+        if (newStr === oldStr) continue;
+        fields.push({
+          name: k,
+          label: k.replace(/_/g, " "),
+          oldVal: oldStr,
+          newVal: newStr,
+        });
       }
       return fields;
     });
@@ -87,13 +88,15 @@ export default {
         const prefix = props.entityConfig.endpoint_prefix;
         const body = {};
         for (const [k, v] of Object.entries(props.pendingData)) {
-          if (
-            v === null ||
-            v === undefined ||
-            v === "" ||
-            (Array.isArray(v) && !v.length)
-          )
+          const isEmpty = v === null || v === undefined || v === "" || (Array.isArray(v) && !v.length);
+          if (isEmpty) {
+            if (!props.isNew) {
+              const oldVal = props.loadedData?.[k];
+              const wasEmpty = oldVal == null || oldVal === "" || (Array.isArray(oldVal) && !oldVal.length);
+              if (!wasEmpty) body[k] = null;
+            }
             continue;
+          }
           body[k] = v;
         }
         let result;

@@ -74,6 +74,15 @@ export default {
       }
     }
 
+    function clearSelection() {
+      selectedQid.value = "";
+      selectedLabel.value = "";
+      isSearching.value = true;
+      searchText.value = "";
+      suggestions.value = [];
+      emit("update:modelValue", "");
+    }
+
     function select(item) {
       selectedQid.value = item.id;
       selectedLabel.value = item.label || "";
@@ -168,6 +177,7 @@ export default {
       searchError,
       enterSearch,
       cancelSearch,
+      clearSelection,
       select,
       onSearchInput,
       onBlur,
@@ -182,6 +192,7 @@ export default {
         <span class="item-chip-label">{{ selectedLabel || selectedQid }}</span>
         <span class="item-chip-id">({{ selectedQid }})</span>
         <button class="item-chip-edit" type="button" @click="enterSearch" :title="t('search_change')">✎</button>
+        <button class="item-chip-edit" type="button" @click="clearSelection" :title="t('search_clear')">🗑</button>
       </div>
 
       <!-- Search mode -->
