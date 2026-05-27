@@ -124,6 +124,7 @@ export default {
       () => {
         pendingOps.value = [];
         closeInline();
+        load();
       },
     );
 
