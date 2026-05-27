@@ -191,12 +191,14 @@ export default {
       <div v-if="!isSearching && selectedQid" class="item-chip">
         <span class="item-chip-label">{{ selectedLabel || selectedQid }}</span>
         <span class="item-chip-id">({{ selectedQid }})</span>
-        <button class="icon-btn" type="button" @click="enterSearch" :title="t('search_change')">
-          <icon name="pencil" />
-        </button>
-        <button class="icon-btn danger" type="button" @click="clearSelection" :title="t('search_clear')">
-          <icon name="trash" />
-        </button>
+        <div class="item-chip-actions">
+          <button class="icon-btn" type="button" @click="enterSearch" :title="t('search_change')">
+            <icon name="pencil" />
+          </button>
+          <button class="icon-btn danger" type="button" @click="clearSelection" :title="t('search_clear')">
+            <icon name="trash" />
+          </button>
+        </div>
       </div>
 
       <!-- Search mode -->
