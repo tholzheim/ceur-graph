@@ -89,6 +89,13 @@ const messages = {
 
     field_add_item: "Add",
 
+    datetime_use_picker: "Use date picker",
+    datetime_use_custom: "Enter custom value",
+    datetime_format_hint:
+      "Format: +YYYY-MM-DDTHH:MM:SSZ — use 00 for unknown parts (e.g. +2020-00-00T00:00:00Z for year precision).",
+    datetime_invalid_format:
+      "Value does not match the expected Wikibase time format.",
+
     search_placeholder: "Search by label or enter QID…",
     search_change: "Change",
     search_cancel: "Cancel",
@@ -166,6 +173,13 @@ const messages = {
     stmt_source_count: "{count} Quelle(n) hinterlegt",
 
     field_add_item: "Hinzufügen",
+
+    datetime_use_picker: "Datumsauswahl verwenden",
+    datetime_use_custom: "Eigenen Wert eingeben",
+    datetime_format_hint:
+      "Format: +JJJJ-MM-TTTHH:MM:SSZ — 00 für unbekannte Teile verwenden (z. B. +2020-00-00T00:00:00Z für Jahresgenauigkeit).",
+    datetime_invalid_format:
+      "Wert entspricht nicht dem erwarteten Wikibase-Zeitformat.",
 
     search_placeholder: "Nach Label suchen oder QID eingeben…",
     search_change: "Ändern",

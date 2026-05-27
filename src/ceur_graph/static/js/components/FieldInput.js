@@ -1,10 +1,11 @@
 import { useI18n } from "../i18n.js";
+import DateTimeInput from "./DateTimeInput.js";
 import ItemSearchInput from "./ItemSearchInput.js";
 import SourceBlockEditor from "./SourceBlockEditor.js";
 
 export default {
   name: "FieldInput",
-  components: { ItemSearchInput, SourceBlockEditor },
+  components: { DateTimeInput, ItemSearchInput, SourceBlockEditor },
   props: {
     field: { type: Object, required: true },
     modelValue: { default: null },
@@ -21,6 +22,7 @@ export default {
     );
     const isNumber = computed(() => props.field.wikibase_type === "quantity");
     const isUrl = computed(() => props.field.wikibase_type === "url");
+    const isTime = computed(() => props.field.wikibase_type === "time");
     const isList = computed(() => props.field.field_type === "list");
     const supportsRefs = computed(() => !!props.field.supports_references);
 
@@ -92,6 +94,7 @@ export default {
       isItem,
       isNumber,
       isUrl,
+      isTime,
       isList,
       inputType,
       listVal,
@@ -115,6 +118,11 @@ export default {
             <item-search-input
               v-if="isItem"
               :model-value="val"
+              @update:model-value="updateList(idx, $event)"
+            />
+            <date-time-input
+              v-else-if="isTime"
+              :model-value="val || ''"
               @update:model-value="updateList(idx, $event)"
             />
             <input
@@ -142,6 +150,11 @@ export default {
       <template v-else>
         <item-search-input
           v-if="isItem"
+          :model-value="modelValue || ''"
+          @update:model-value="$emit('update:modelValue', $event)"
+        />
+        <date-time-input
+          v-else-if="isTime"
           :model-value="modelValue || ''"
           @update:model-value="$emit('update:modelValue', $event)"
         />

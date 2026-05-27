@@ -1,4 +1,5 @@
 import logging
+import re
 import types as _types_module
 from typing import Any, Union, get_args, get_origin
 
@@ -274,6 +275,33 @@ def update_item_from_model(model: BaseModel, item: ItemEntity):
                 _attach_reference_blocks(target, sources_value)
 
 
+_WB_TIME_RE = re.compile(r"^[+-](\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$")
+
+
+def _infer_time_precision(time_str: str) -> int:
+    """
+    Infer the Wikibase time precision from a `±YYYY-MM-DDTHH:MM:SSZ` string.
+
+    Zeros in the lower slots encode lower precision: `+2020-00-00T00:00:00Z` is year
+    precision (9), `+2020-05-00T00:00:00Z` is month (10), `+2020-05-20T00:00:00Z` is
+    day (11). Day is the finest precision currently supported by WikibaseIntegrator,
+    so sub-day fields are ignored. Falls back to day precision when the input
+    doesn't match the expected format.
+    """
+    if not isinstance(time_str, str):
+        return 11
+    m = _WB_TIME_RE.match(time_str)
+    if not m:
+        logger.debug("Time value %r does not match Wikibase format; using day precision", time_str)
+        return 11
+    _, month, day, _, _, _ = m.groups()
+    if month == "00" and day == "00":
+        return 9
+    if day == "00":
+        return 10
+    return 11
+
+
 def get_claim(prop_id: str, datatype: str, value: Any, language: str | None = None) -> Claim | None:
     """
     Get claim
@@ -301,7 +329,7 @@ def get_claim(prop_id: str, datatype: str, value: Any, language: str | None = No
         case datatypes.String.DTYPE:
             claim = datatypes.String(value=str(value), prop_nr=prop_nr)
         case datatypes.Time.DTYPE:
-            claim = datatypes.Time(time=value, prop_nr=prop_nr)
+            claim = datatypes.Time(time=value, precision=_infer_time_precision(value), prop_nr=prop_nr)
         case datatypes.ExternalID.DTYPE:
             claim = datatypes.ExternalID(value=value, prop_nr=prop_nr)
         case datatypes.Quantity.DTYPE:

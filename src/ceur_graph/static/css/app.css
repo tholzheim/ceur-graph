@@ -247,6 +247,29 @@ label {
 .list-field-item > :first-child { flex: 1; min-width: 0; }
 .list-field-item-group { margin-bottom: 0.4rem; }
 
+/* DateTime field: picker / custom text + mode toggle */
+.datetime-input {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.datetime-input-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.datetime-input-row > input { flex: 1; min-width: 0; }
+.datetime-hint {
+  color: var(--muted-color);
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+.datetime-hint--warn {
+  color: var(--warn-color);
+}
+
 /* "+ Add" link-style button used by FieldInput and SourceBlockEditor */
 .link-btn {
   display: inline-flex;
