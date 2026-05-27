@@ -208,7 +208,7 @@ label {
 
 .fields-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  grid-template-columns: 1fr;
   gap: var(--field-row-gap) 1rem;
 }
 
