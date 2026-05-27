@@ -4,6 +4,15 @@ import CommitDialog from "./CommitDialog.js";
 import FieldInput from "./FieldInput.js";
 import StatementListEditor from "./StatementListEditor.js";
 
+function isEmptyValue(v) {
+  return v == null || v === "" || (Array.isArray(v) && v.length === 0);
+}
+
+function stringifyForCompare(v) {
+  if (v == null) return null;
+  return Array.isArray(v) ? v.join("") : String(v);
+}
+
 export default {
   name: "EntityEditor",
   components: { FieldInput, StatementListEditor, CommitDialog },
@@ -25,7 +34,6 @@ export default {
     const success = ref("");
     const commitOpen = ref(false);
 
-    // Pending statement changes collected from child StatementListEditors
     const pendingStatements = reactive({});
     const clearSignal = ref(0);
 
@@ -42,7 +50,6 @@ export default {
       history.pushState(null, "", path);
     }
 
-    // schema is the flat list returned by /api/schema/entities
     const entities = computed(() =>
       Array.isArray(props.schema)
         ? props.schema
@@ -63,6 +70,34 @@ export default {
       ),
     );
     const loadedQid = computed(() => loadedData.value?.qid ?? null);
+
+    // Pending-change count for the commit button badge. Best-effort: counts
+    // simple-field diffs + source-list diffs + statement ops. Detailed diff
+    // still lives in CommitDialog; this is just for the "(N)" indicator.
+    const pendingCount = computed(() => {
+      if (!selectedEntity.value) return 0;
+      let n = 0;
+      for (const [k, v] of Object.entries(pendingData)) {
+        const isSources = k.endsWith("_sources");
+        const oldVal = loadedData.value?.[k];
+        const newEmpty = isEmptyValue(v);
+        const oldEmpty = isEmptyValue(oldVal);
+        if (newEmpty && oldEmpty) continue;
+        if (isSources) {
+          if (JSON.stringify(v ?? []) !== JSON.stringify(oldVal ?? [])) n++;
+        } else if (
+          stringifyForCompare(newEmpty ? null : v) !==
+          stringifyForCompare(oldVal)
+        ) {
+          n++;
+        }
+      }
+      for (const key of Object.keys(pendingStatements)) {
+        n += pendingStatements[key].ops?.length ?? 0;
+      }
+      return n;
+    });
+    const hasChanges = computed(() => pendingCount.value > 0);
 
     function resetForm() {
       loadedData.value = null;
@@ -157,7 +192,6 @@ export default {
         );
       }
       isNew.value = false;
-      // Clear pending statements after successful commit
       Object.keys(pendingStatements).forEach(
         (k) => delete pendingStatements[k],
       );
@@ -207,6 +241,8 @@ export default {
       success,
       commitOpen,
       loadedQid,
+      pendingCount,
+      hasChanges,
       load,
       startNew,
       onSaved,
@@ -221,87 +257,93 @@ export default {
     };
   },
   template: `
-    <div>
-      <nav>
-        <ul><li><strong>{{ t('nav_title') }}</strong></li></ul>
-        <ul>
-          <li>
-            <select :value="locale" @change="setLocale($event.target.value)" style="width:auto;margin:0 0.5rem 0 0">
-              <option v-for="(label, code) in LANGUAGES" :key="code" :value="code">{{ label }}</option>
-            </select>
-          </li>
-          <li><button class="secondary outline" @click="logout" style="padding:0.3rem 0.75rem">{{ t('nav_logout') }}</button></li>
-        </ul>
-      </nav>
+    <div class="app-shell">
+      <header class="app-bar">
+        <span class="app-bar-title">{{ t('nav_title') }}</span>
+        <div class="app-bar-actions">
+          <select :value="locale" @change="setLocale($event.target.value)">
+            <option v-for="(label, code) in LANGUAGES" :key="code" :value="code">{{ label }}</option>
+          </select>
+          <button class="commit-btn" :disabled="!hasChanges" @click="commitOpen = true"
+                  :title="hasChanges ? t('entity_commit_button') : t('commit_no_changes')">
+            <icon name="check" />
+            <span>{{ t('entity_commit_button') }}</span>
+            <span v-if="pendingCount > 0" class="changes-badge">{{ pendingCount }}</span>
+          </button>
+          <button class="icon-btn" :title="t('nav_logout')" @click="logout">
+            <icon name="logout" />
+          </button>
+        </div>
+      </header>
 
-      <div class="entity-editor">
-        <!-- Entity selector -->
-        <div style="display:flex;gap:1rem;align-items:flex-end;margin-bottom:1.5rem;flex-wrap:wrap">
-          <label style="flex:1;min-width:180px;margin:0">
-            {{ t('entity_type_label') }}
-            <select v-model="selectedEntityName" style="margin:0">
+      <main class="editor-layout">
+        <aside class="rail">
+          <div class="rail-field">
+            <label>{{ t('entity_type_label') }}</label>
+            <select v-model="selectedEntityName">
               <option value="">{{ t('entity_type_placeholder') }}</option>
               <option v-for="e in entities" :key="e.name" :value="e.name">{{ e.name }}</option>
             </select>
-          </label>
+          </div>
 
-          <label style="flex:1;min-width:200px;margin:0">
-            {{ t('entity_load_label') }}
-            <div style="display:flex;gap:0.5rem">
-              <input v-model="qidInput" :placeholder="t('entity_load_placeholder')" style="margin:0;flex:1" @keyup.enter="load" :disabled="!selectedEntity" />
-              <button @click="load" :aria-busy="loadLoading" :disabled="!selectedEntity" style="margin:0;white-space:nowrap">{{ t('entity_load_button') }}</button>
+          <div class="rail-field">
+            <label>{{ t('entity_load_label') }}</label>
+            <div class="rail-row">
+              <input v-model="qidInput" :placeholder="t('entity_load_placeholder')"
+                     :disabled="!selectedEntity"
+                     @keyup.enter="load" />
+              <button @click="load" :aria-busy="loadLoading" :disabled="!selectedEntity">
+                {{ t('entity_load_button') }}
+              </button>
             </div>
-          </label>
+            <span class="key-hint">↵ {{ t('entity_load_button') }}</span>
+          </div>
 
-          <button class="secondary outline" @click="startNew" :disabled="!selectedEntity" style="margin:0;align-self:flex-end">{{ t('entity_new_button') }}</button>
-        </div>
+          <button class="secondary outline" :disabled="!selectedEntity" @click="startNew">
+            {{ t('entity_new_button') }}
+          </button>
+        </aside>
 
-        <div v-if="loadError" class="error-banner">{{ loadError }}</div>
-        <div v-if="success" class="success-banner">{{ success }}</div>
+        <section class="main-pane">
+          <div v-if="loadError" class="error-banner">{{ loadError }}</div>
+          <div v-if="success" class="success-banner">{{ success }}</div>
 
-        <!-- Form -->
-        <template v-if="selectedEntity && (isNew || loadedData)">
-          <hgroup>
+          <template v-if="selectedEntity && (isNew || loadedData)">
             <h3>{{ isNew ? t('entity_new_heading', { name: selectedEntity.name }) : t('entity_loaded_heading', { name: selectedEntity.name, qid: loadedQid }) }}</h3>
-          </hgroup>
 
-          <!-- Simple fields -->
-          <div v-for="f in simpleFields" :key="f.name" class="field-row">
-            <label>
-              {{ f.label }}<span v-if="f.required" style="color:red">*</span>
-              <field-input v-if="!f.supports_references"
-                           :field="f"
-                           v-model="pendingData[f.name]" />
-              <field-input v-else
-                           :field="f"
-                           v-model="pendingData[f.name]"
-                           v-model:sources="pendingData[f.name + '_sources']" />
-            </label>
-          </div>
+            <div v-if="simpleFields.length" class="card">
+              <div class="fields-grid">
+                <div v-for="f in simpleFields" :key="f.name" class="field-row">
+                  <label>
+                    {{ f.label }}<span v-if="f.required" class="field-required">*</span>
+                  </label>
+                  <field-input v-if="!f.supports_references"
+                               :field="f"
+                               v-model="pendingData[f.name]" />
+                  <field-input v-else
+                               :field="f"
+                               v-model="pendingData[f.name]"
+                               v-model:sources="pendingData[f.name + '_sources']" />
+                </div>
+              </div>
+            </div>
 
-          <div style="margin:1.5rem 0">
-            <button @click="commitOpen = true">{{ t('entity_commit_button') }}</button>
-          </div>
-
-          <!-- Statement list editors -->
-          <template v-for="f in statementFields" :key="f.name">
-            <hr>
-            <h4>{{ f.label }}</h4>
-            <statement-list-editor
-              :field="f"
-              :parent-qid="loadedQid"
-              :clear-signal="clearSignal"
-              @update:pending="(name, ops, fc) => onPendingChange(name, ops, fc)"
-            />
+            <section v-for="f in statementFields" :key="f.name" class="card statement-section">
+              <statement-list-editor
+                :field="f"
+                :parent-qid="loadedQid"
+                :clear-signal="clearSignal"
+                @update:pending="(name, ops, fc) => onPendingChange(name, ops, fc)"
+              />
+            </section>
           </template>
-        </template>
 
-        <p v-else-if="selectedEntity && !isNew && !loadedData" style="color:var(--muted-color)">
-          {{ t('entity_empty_hint') }}
-        </p>
-      </div>
+          <p v-else-if="selectedEntity && !isNew && !loadedData" class="entity-empty">
+            {{ t('entity_empty_hint') }}
+          </p>
+        </section>
+      </main>
 
-      <!-- Commit dialog -->
       <commit-dialog
         :open="commitOpen"
         :pending-data="pendingData"

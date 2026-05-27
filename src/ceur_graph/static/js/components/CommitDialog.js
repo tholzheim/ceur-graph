@@ -153,6 +153,12 @@ export default {
       return t("commit_op_remove");
     }
 
+    function opIcon(op) {
+      if (op.type === "add") return "plus";
+      if (op.type === "edit") return "pencil";
+      return "trash";
+    }
+
     function close() {
       error.value = "";
       emit("close");
@@ -247,6 +253,7 @@ export default {
       hasChanges,
       formatOpDisplay,
       opLabel,
+      opIcon,
       loading,
       error,
       close,
@@ -303,7 +310,12 @@ export default {
               <tbody>
                 <tr v-for="(sc, i) in statementChanges" :key="i">
                   <td>{{ sc.fieldLabel }}</td>
-                  <td>{{ opLabel(sc.op) }}</td>
+                  <td>
+                    <span class="diff-op">
+                      <icon :name="opIcon(sc.op)" />
+                      {{ opLabel(sc.op) }}
+                    </span>
+                  </td>
                   <td>{{ formatOpDisplay(sc.op) }}</td>
                 </tr>
               </tbody>

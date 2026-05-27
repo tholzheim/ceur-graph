@@ -16,7 +16,7 @@ export default {
     clearSignal: { type: Number, default: 0 },
   },
   setup(props, { emit }) {
-    const { ref, reactive, watch, computed } = Vue;
+    const { ref, reactive, watch, computed, nextTick } = Vue;
     const { t } = useI18n();
 
     const rows = ref([]);
@@ -26,17 +26,19 @@ export default {
 
     const pendingOps = ref([]);
 
-    // Dialog state
-    const dialogOpen = ref(false);
+    // Inline editor state. `editingKey` identifies which row the inline form
+    // is attached to: "new" for a fresh add-row at the top, a `_id` for a
+    // pending add/edit op already in the queue, or a `statement_id` for an
+    // existing row pulled from the server. Only one open at a time.
+    const editingKey = ref(null);
     const editingRow = ref(null);
     const formData = reactive({});
-    const dialogError = ref("");
+    const editorError = ref("");
     const deleteConfirm = ref(null);
 
     // Snak-type dropdown state (for enforce_unknown_stmt_name statement types)
-    const snakType = ref("unknown_value"); // 'value' | 'unknown_value' | 'no_value'
+    const snakType = ref("unknown_value");
 
-    // --- Derived pending state ---
     const pendingDeleteIds = computed(
       () =>
         new Set(
@@ -56,7 +58,6 @@ export default {
       pendingOps.value.filter((op) => op.type === "add"),
     );
 
-    // --- Snak-type helpers ---
     const subjectField = computed(() =>
       props.field.statement_fields.find((f) => f.is_subject),
     );
@@ -79,7 +80,6 @@ export default {
       else formData[subjectField.value.name] = "";
     });
 
-    // --- Label resolution ---
     function resolveLabelsForRow(row) {
       const itemFields = props.field.statement_fields.filter(
         (f) => f.wikibase_type === "wikibase-item",
@@ -98,7 +98,6 @@ export default {
       for (const row of rows.value) resolveLabelsForRow(row);
     }
 
-    // --- Load ---
     function endpointFor(parentQid) {
       if (!props.field.statement_endpoint || !parentQid) return null;
       return props.field.statement_endpoint.replace(/\{[^}]+\}/, parentQid);
@@ -124,10 +123,11 @@ export default {
       () => props.clearSignal,
       () => {
         pendingOps.value = [];
+        closeInline();
       },
     );
 
-    // --- Sources (Wikibase reference blocks) helpers ---
+    // Sources (Wikibase reference blocks) helpers
     function emptySource() {
       const block = {};
       (props.field.reference_fields || []).forEach((rf) => {
@@ -157,22 +157,37 @@ export default {
       return Array.isArray(eff?.sources) ? eff.sources : [];
     }
 
-    // --- Dialog open ---
-    function openNew() {
+    // Inline editor open/close
+    function focusFirstInput() {
+      nextTick(() => {
+        const el = document.querySelector(
+          ".stmt-inline-editor input, .stmt-inline-editor select",
+        );
+        if (el) el.focus();
+      });
+    }
+
+    function openNewInline() {
+      editingKey.value = "new";
       editingRow.value = null;
       Object.keys(formData).forEach((k) => delete formData[k]);
       props.field.statement_fields.forEach((f) => {
         formData[f.name] = f.field_type === "list" ? [] : "";
       });
       formData.sources = [];
-      // Default snak type to unknown_value (matches model default of "somevalue")
       snakType.value = "unknown_value";
       if (subjectField.value) formData[subjectField.value.name] = "somevalue";
-      dialogError.value = "";
-      dialogOpen.value = true;
+      editorError.value = "";
+      focusFirstInput();
     }
 
-    function openEdit(row) {
+    function rowKey(row) {
+      if (row?._id !== undefined) return `op-${row._id}`;
+      if (row?.statement_id) return `sid-${row.statement_id}`;
+      return null;
+    }
+
+    function openEditInline(row) {
       const src =
         row._id !== undefined
           ? row.data
@@ -181,6 +196,7 @@ export default {
         row._id !== undefined
           ? row
           : (pendingEditMap.value[row.statement_id] ?? row);
+      editingKey.value = rowKey(editingRow.value) ?? rowKey(row);
 
       Object.keys(formData).forEach((k) => delete formData[k]);
       props.field.statement_fields.forEach((f) => {
@@ -190,16 +206,17 @@ export default {
       if (subjectField.value && enforceUnknownStmtName.value) {
         snakType.value = snakTypeFromValue(src[subjectField.value.name] ?? "");
       }
-      dialogError.value = "";
-      dialogOpen.value = true;
+      editorError.value = "";
+      focusFirstInput();
     }
 
-    function closeDialog() {
-      dialogOpen.value = false;
+    function closeInline() {
+      editingKey.value = null;
+      editingRow.value = null;
+      editorError.value = "";
     }
 
-    // --- Save to pending queue ---
-    function saveDialog() {
+    function saveInline() {
       const body = { ...formData };
       props.field.statement_fields.forEach((f) => {
         if (f.field_type === "list" && Array.isArray(body[f.name])) {
@@ -255,11 +272,10 @@ export default {
       }
 
       resolveLabelsForRow(body);
-      dialogOpen.value = false;
+      closeInline();
       emit("update:pending", props.field.name, pendingOps.value, props.field);
     }
 
-    // --- Delete / undo ---
     function markDelete(row) {
       if (row._id !== undefined) {
         pendingOps.value = pendingOps.value.filter((op) => op._id !== row._id);
@@ -280,7 +296,6 @@ export default {
       emit("update:pending", props.field.name, pendingOps.value, props.field);
     }
 
-    // --- Display ---
     function displayValue(row, f) {
       const v = row[f.name];
       if (v == null || v === "") return "—";
@@ -295,10 +310,11 @@ export default {
     }
 
     const visibleCols = computed(() => props.field.statement_fields);
+    const colSpan = computed(() => visibleCols.value.length + 1);
 
-    const isEditingPending = computed(
-      () => editingRow.value && editingRow.value._id !== undefined,
-    );
+    function isEditingRow(row) {
+      return editingKey.value !== null && editingKey.value === rowKey(row);
+    }
 
     return {
       rows,
@@ -309,148 +325,265 @@ export default {
       pendingDeleteIds,
       pendingEditMap,
       pendingAdds,
-      dialogOpen,
+      editingKey,
       editingRow,
       formData,
-      dialogError,
+      editorError,
       deleteConfirm,
-      openNew,
-      openEdit,
-      closeDialog,
-      saveDialog,
+      openNewInline,
+      openEditInline,
+      closeInline,
+      saveInline,
       markDelete,
       undoOp,
       displayValue,
       visibleCols,
-      isEditingPending,
+      colSpan,
       snakType,
       subjectField,
       enforceUnknownStmtName,
       effectiveSources,
+      isEditingRow,
       t,
     };
   },
   template: `
     <div>
+      <div class="card-header">
+        <h4>{{ field.label }}</h4>
+        <button class="link-btn" @click="openNewInline" :disabled="editingKey === 'new'">
+          <icon name="plus" /> {{ t('stmt_add_button', { label: field.label }) }}
+        </button>
+      </div>
+
       <div v-if="error" class="error-banner">{{ error }}</div>
 
       <div v-if="loading">
         <span class="spinner"></span> {{ t('stmt_loading') }}
       </div>
 
-      <table v-else-if="rows.length || pendingAdds.length" class="stmt-table">
+      <table v-else-if="rows.length || pendingAdds.length || editingKey === 'new'" class="stmt-table">
         <thead>
           <tr>
             <th v-for="f in visibleCols" :key="f.name">{{ f.label }}</th>
-            <th>Actions</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
-          <!-- Saved rows -->
-          <tr v-for="row in rows" :key="row.statement_id"
-              :style="pendingDeleteIds.has(row.statement_id) ? 'opacity:0.45;text-decoration:line-through' : ''">
-            <td v-for="f in visibleCols" :key="f.name">
-              {{ displayValue(pendingEditMap[row.statement_id]?.displayRow ?? row, f) }}
-            </td>
-            <td>
-              <template v-if="pendingDeleteIds.has(row.statement_id)">
-                <button class="outline" style="padding:0.2rem 0.6rem;margin:0"
-                        @click="undoOp(pendingOps.find(op=>op.statementId===row.statement_id)?._id)">{{ t('stmt_undo_button') }}</button>
-              </template>
-              <template v-else>
-                <button class="outline" style="padding:0.2rem 0.6rem;margin:0 0.25rem 0 0" @click="openEdit(row)">{{ t('stmt_edit_button') }}</button>
-                <span v-if="effectiveSources(row).length" :title="t('stmt_source_count', { count: effectiveSources(row).length })" style="font-size:0.85em;margin-right:0.25rem">📚 {{ effectiveSources(row).length }}</span>
-                <span v-if="pendingEditMap[row.statement_id]" style="color:orange;font-size:0.8em;margin-right:0.25rem">⚠</span>
-                <template v-if="deleteConfirm === row">
-                  <small>{{ t('stmt_delete_confirm') }} </small>
-                  <button style="padding:0.2rem 0.5rem;margin:0 0.25rem 0 0" @click="markDelete(row)">{{ t('stmt_delete_yes') }}</button>
-                  <button class="secondary outline" style="padding:0.2rem 0.5rem;margin:0" @click="deleteConfirm=null">{{ t('stmt_delete_no') }}</button>
+          <!-- Inline editor for a fresh "add" row -->
+          <tr v-if="editingKey === 'new'" class="stmt-inline-editor">
+            <td :colspan="colSpan">
+              <div class="inline-editor-body">
+                <template v-for="f in field.statement_fields" :key="f.name">
+                  <template v-if="f.is_subject && enforceUnknownStmtName">
+                    <div class="field-row">
+                      <label>{{ t('stmt_snak_type') }}</label>
+                      <select v-model="snakType">
+                        <option value="value">{{ t('stmt_snak_value') }}</option>
+                        <option value="unknown_value">{{ t('stmt_snak_unknown') }}</option>
+                        <option value="no_value">{{ t('stmt_snak_no_value') }}</option>
+                      </select>
+                    </div>
+                    <div v-if="snakType === 'value'" class="field-row">
+                      <label>{{ f.label }}<span class="field-required">*</span></label>
+                      <field-input :field="f" v-model="formData[f.name]" />
+                    </div>
+                  </template>
+                  <template v-else-if="f.is_object_named_as && enforceUnknownStmtName">
+                    <div v-if="snakType === 'unknown_value'" class="field-row">
+                      <label>{{ f.label }}<span class="field-required">*</span></label>
+                      <field-input :field="f" v-model="formData[f.name]" />
+                    </div>
+                  </template>
+                  <div v-else class="field-row">
+                    <label>
+                      {{ f.label }}<span v-if="f.required" class="field-required">*</span>
+                    </label>
+                    <field-input :field="f" v-model="formData[f.name]" />
+                  </div>
                 </template>
-                <button v-else class="secondary outline" style="padding:0.2rem 0.6rem;margin:0" @click="deleteConfirm=row">{{ t('stmt_remove_button') }}</button>
-              </template>
+                <div v-if="field.supports_references" class="inline-editor-sources">
+                  <source-block-editor :reference-fields="field.reference_fields"
+                                       v-model="formData.sources" />
+                </div>
+                <div v-if="editorError" class="error-banner inline-editor-sources">{{ editorError }}</div>
+                <div class="inline-editor-footer">
+                  <button class="secondary outline" type="button" @click="closeInline">
+                    {{ t('stmt_cancel_button') }}
+                  </button>
+                  <button type="button" @click="saveInline">
+                    {{ t('stmt_save_button') }}
+                  </button>
+                </div>
+              </div>
             </td>
           </tr>
 
-          <!-- Pending add rows -->
-          <tr v-for="op in pendingAdds" :key="op._id" style="color:var(--muted-color);font-style:italic">
-            <td v-for="f in visibleCols" :key="f.name">{{ displayValue(op.displayRow, f) }}</td>
-            <td>
-              <button class="outline" style="padding:0.2rem 0.6rem;margin:0 0.25rem 0 0" @click="openEdit(op)">{{ t('stmt_edit_button') }}</button>
-              <button class="secondary outline" style="padding:0.2rem 0.6rem;margin:0 0.25rem 0 0" @click="undoOp(op._id)">{{ t('stmt_remove_button') }}</button>
-              <span v-if="op.displayRow?.sources?.length" :title="t('stmt_source_count', { count: op.displayRow.sources.length })" style="font-size:0.85em;margin-right:0.25rem">📚 {{ op.displayRow.sources.length }}</span>
-              <span style="color:orange;font-size:0.8em">{{ t('stmt_pending') }}</span>
-            </td>
-          </tr>
+          <!-- Saved rows + per-row inline editor -->
+          <template v-for="row in rows" :key="row.statement_id">
+            <tr :class="pendingDeleteIds.has(row.statement_id) ? 'stmt-row--deleted' : ''">
+              <td v-for="f in visibleCols" :key="f.name">
+                {{ displayValue(pendingEditMap[row.statement_id]?.displayRow ?? row, f) }}
+              </td>
+              <td>
+                <div class="stmt-row-actions">
+                  <template v-if="pendingDeleteIds.has(row.statement_id)">
+                    <button class="icon-btn" :title="t('stmt_undo_button')"
+                            @click="undoOp(pendingOps.find(op=>op.statementId===row.statement_id)?._id)">
+                      <icon name="undo" />
+                    </button>
+                  </template>
+                  <template v-else>
+                    <button class="icon-btn" :title="t('stmt_edit_button')" @click="openEditInline(row)">
+                      <icon name="pencil" />
+                    </button>
+                    <span v-if="effectiveSources(row).length" class="stmt-meta"
+                          :title="t('stmt_source_count', { count: effectiveSources(row).length })">
+                      <icon name="book" /> {{ effectiveSources(row).length }}
+                    </span>
+                    <span v-if="pendingEditMap[row.statement_id]" class="stmt-meta text-warning"
+                          :title="t('stmt_pending')">
+                      <icon name="warning" />
+                    </span>
+                    <template v-if="deleteConfirm === row">
+                      <small>{{ t('stmt_delete_confirm') }}</small>
+                      <button @click="markDelete(row)" style="padding:0.2rem 0.5rem">{{ t('stmt_delete_yes') }}</button>
+                      <button class="secondary outline" @click="deleteConfirm=null" style="padding:0.2rem 0.5rem">
+                        {{ t('stmt_delete_no') }}
+                      </button>
+                    </template>
+                    <button v-else class="icon-btn danger" :title="t('stmt_remove_button')"
+                            @click="deleteConfirm=row">
+                      <icon name="trash" />
+                    </button>
+                  </template>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="isEditingRow(row) || isEditingRow(pendingEditMap[row.statement_id])"
+                class="stmt-inline-editor">
+              <td :colspan="colSpan">
+                <div class="inline-editor-body">
+                  <template v-for="f in field.statement_fields" :key="f.name">
+                    <template v-if="f.is_subject && enforceUnknownStmtName">
+                      <div class="field-row">
+                        <label>{{ t('stmt_snak_type') }}</label>
+                        <select v-model="snakType">
+                          <option value="value">{{ t('stmt_snak_value') }}</option>
+                          <option value="unknown_value">{{ t('stmt_snak_unknown') }}</option>
+                          <option value="no_value">{{ t('stmt_snak_no_value') }}</option>
+                        </select>
+                      </div>
+                      <div v-if="snakType === 'value'" class="field-row">
+                        <label>{{ f.label }}<span class="field-required">*</span></label>
+                        <field-input :field="f" v-model="formData[f.name]" />
+                      </div>
+                    </template>
+                    <template v-else-if="f.is_object_named_as && enforceUnknownStmtName">
+                      <div v-if="snakType === 'unknown_value'" class="field-row">
+                        <label>{{ f.label }}<span class="field-required">*</span></label>
+                        <field-input :field="f" v-model="formData[f.name]" />
+                      </div>
+                    </template>
+                    <div v-else class="field-row">
+                      <label>
+                        {{ f.label }}<span v-if="f.required" class="field-required">*</span>
+                      </label>
+                      <field-input :field="f" v-model="formData[f.name]" />
+                    </div>
+                  </template>
+                  <div v-if="field.supports_references" class="inline-editor-sources">
+                    <source-block-editor :reference-fields="field.reference_fields"
+                                         v-model="formData.sources" />
+                  </div>
+                  <div v-if="editorError" class="error-banner inline-editor-sources">{{ editorError }}</div>
+                  <div class="inline-editor-footer">
+                    <button class="secondary outline" type="button" @click="closeInline">
+                      {{ t('stmt_cancel_button') }}
+                    </button>
+                    <button type="button" @click="saveInline">
+                      {{ t('stmt_save_button') }}
+                    </button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </template>
+
+          <!-- Pending add rows (queued, not yet committed) -->
+          <template v-for="op in pendingAdds" :key="op._id">
+            <tr class="stmt-row--pending">
+              <td v-for="f in visibleCols" :key="f.name">{{ displayValue(op.displayRow, f) }}</td>
+              <td>
+                <div class="stmt-row-actions">
+                  <button class="icon-btn" :title="t('stmt_edit_button')" @click="openEditInline(op)">
+                    <icon name="pencil" />
+                  </button>
+                  <button class="icon-btn danger" :title="t('stmt_remove_button')" @click="undoOp(op._id)">
+                    <icon name="trash" />
+                  </button>
+                  <span v-if="op.displayRow?.sources?.length" class="stmt-meta"
+                        :title="t('stmt_source_count', { count: op.displayRow.sources.length })">
+                    <icon name="book" /> {{ op.displayRow.sources.length }}
+                  </span>
+                  <span class="stmt-meta text-warning" :title="t('stmt_pending')">
+                    <icon name="warning" /> {{ t('stmt_pending') }}
+                  </span>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="isEditingRow(op)" class="stmt-inline-editor">
+              <td :colspan="colSpan">
+                <div class="inline-editor-body">
+                  <template v-for="f in field.statement_fields" :key="f.name">
+                    <template v-if="f.is_subject && enforceUnknownStmtName">
+                      <div class="field-row">
+                        <label>{{ t('stmt_snak_type') }}</label>
+                        <select v-model="snakType">
+                          <option value="value">{{ t('stmt_snak_value') }}</option>
+                          <option value="unknown_value">{{ t('stmt_snak_unknown') }}</option>
+                          <option value="no_value">{{ t('stmt_snak_no_value') }}</option>
+                        </select>
+                      </div>
+                      <div v-if="snakType === 'value'" class="field-row">
+                        <label>{{ f.label }}<span class="field-required">*</span></label>
+                        <field-input :field="f" v-model="formData[f.name]" />
+                      </div>
+                    </template>
+                    <template v-else-if="f.is_object_named_as && enforceUnknownStmtName">
+                      <div v-if="snakType === 'unknown_value'" class="field-row">
+                        <label>{{ f.label }}<span class="field-required">*</span></label>
+                        <field-input :field="f" v-model="formData[f.name]" />
+                      </div>
+                    </template>
+                    <div v-else class="field-row">
+                      <label>
+                        {{ f.label }}<span v-if="f.required" class="field-required">*</span>
+                      </label>
+                      <field-input :field="f" v-model="formData[f.name]" />
+                    </div>
+                  </template>
+                  <div v-if="field.supports_references" class="inline-editor-sources">
+                    <source-block-editor :reference-fields="field.reference_fields"
+                                         v-model="formData.sources" />
+                  </div>
+                  <div v-if="editorError" class="error-banner inline-editor-sources">{{ editorError }}</div>
+                  <div class="inline-editor-footer">
+                    <button class="secondary outline" type="button" @click="closeInline">
+                      {{ t('stmt_cancel_button') }}
+                    </button>
+                    <button type="button" @click="saveInline">
+                      {{ t('stmt_save_button') }}
+                    </button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </template>
         </tbody>
       </table>
-      <p v-else><em>{{ t('stmt_empty') }}</em></p>
 
-      <button class="outline" style="margin-top:0.5rem" @click="openNew">{{ t('stmt_add_button', { label: field.label }) }}</button>
-
-      <!-- Dialog -->
-      <dialog :open="dialogOpen">
-        <article style="overflow: visible">
-          <header>
-            <button rel="prev" @click="closeDialog"></button>
-            <strong>{{ isEditingPending || (editingRow && editingRow.statement_id) ? t('stmt_dialog_edit', { label: field.label }) : t('stmt_dialog_add', { label: field.label }) }}</strong>
-          </header>
-          <div v-if="dialogError" class="error-banner">{{ dialogError }}</div>
-          <form @submit.prevent="saveDialog">
-            <template v-for="f in field.statement_fields" :key="f.name">
-
-              <!-- Subject field: snak-type dropdown + conditional QID input -->
-              <template v-if="f.is_subject && enforceUnknownStmtName">
-                <div class="field-row">
-                  <label>
-                    {{ t('stmt_snak_type') }}
-                    <select v-model="snakType" style="margin:0">
-                      <option value="value">{{ t('stmt_snak_value') }}</option>
-                      <option value="unknown_value">{{ t('stmt_snak_unknown') }}</option>
-                      <option value="no_value">{{ t('stmt_snak_no_value') }}</option>
-                    </select>
-                  </label>
-                </div>
-                <div v-if="snakType === 'value'" class="field-row">
-                  <label>
-                    {{ f.label }}<span style="color:red">*</span>
-                    <field-input :field="f" v-model="formData[f.name]" />
-                  </label>
-                </div>
-              </template>
-
-              <!-- object_named_as: only visible when snak type is unknown_value (if enforce) -->
-              <template v-else-if="f.is_object_named_as && enforceUnknownStmtName">
-                <div v-if="snakType === 'unknown_value'" class="field-row">
-                  <label>
-                    {{ f.label }}<span style="color:red">*</span>
-                    <field-input :field="f" v-model="formData[f.name]" />
-                  </label>
-                </div>
-              </template>
-
-              <!-- All other fields shown normally; also all fields when !enforceUnknownStmtName -->
-              <div v-else class="field-row">
-                <label>
-                  {{ f.label }}<span v-if="f.required" style="color:red">*</span>
-                  <field-input :field="f" v-model="formData[f.name]" />
-                </label>
-              </div>
-
-            </template>
-
-            <!-- Wikibase reference blocks (provenance) — collapsed by default -->
-            <source-block-editor v-if="field.supports_references"
-                                 :reference-fields="field.reference_fields"
-                                 v-model="formData.sources" />
-
-
-            <footer>
-              <button class="secondary outline" type="button" @click="closeDialog">{{ t('stmt_cancel_button') }}</button>
-              <button type="submit">{{ t('stmt_save_button') }}</button>
-            </footer>
-          </form>
-        </article>
-      </dialog>
+      <p v-else class="stmt-empty">{{ t('stmt_empty') }}</p>
     </div>
   `,
 };

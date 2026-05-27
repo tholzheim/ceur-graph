@@ -110,7 +110,7 @@ export default {
     <div>
       <!-- List field -->
       <template v-if="isList">
-        <div v-for="(val, idx) in listVal" :key="idx" class="list-field-item-group" style="margin-bottom:0.5rem">
+        <div v-for="(val, idx) in listVal" :key="idx" class="list-field-item-group">
           <div class="list-field-item">
             <item-search-input
               v-if="isItem"
@@ -122,16 +122,20 @@ export default {
               :type="inputType"
               :value="val"
               @input="updateList(idx, $event.target.value)"
-              style="margin:0"
             />
-            <button class="outline" style="padding:0.3rem 0.6rem;margin:0" @click.prevent="removeListItem(idx)">✕</button>
+            <button class="icon-btn danger" type="button" :title="t('stmt_remove_button')"
+                    @click.prevent="removeListItem(idx)">
+              <icon name="x" />
+            </button>
           </div>
           <source-block-editor v-if="supportsRefs"
                                :reference-fields="field.reference_fields"
                                :model-value="sourcesForIndex(idx)"
                                @update:model-value="updateSourcesForIndex(idx, $event)" />
         </div>
-        <button class="secondary outline" style="padding:0.3rem 0.75rem" @click.prevent="addListItem">{{ t('field_add_item') }}</button>
+        <button class="link-btn" type="button" @click.prevent="addListItem">
+          <icon name="plus" /> {{ t('field_add_item') }}
+        </button>
       </template>
 
       <!-- Single item field -->
@@ -146,7 +150,6 @@ export default {
           :type="inputType"
           :value="modelValue ?? ''"
           @input="onSingle"
-          style="margin:0"
         />
         <source-block-editor v-if="supportsRefs"
                              :reference-fields="field.reference_fields"

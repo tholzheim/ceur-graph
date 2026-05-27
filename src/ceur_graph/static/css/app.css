@@ -1,0 +1,554 @@
+/* CEUR-WS Entity Editor — application styles
+   Layered on top of Pico v2 (loaded from CDN by index.html). Pico provides the
+   reset + base typography; everything below is the app-specific layout, the
+   tighter form rhythm, and the icon-button vocabulary used across components. */
+
+:root {
+  --spacing: 0.5rem;
+  --field-row-gap: 0.6rem;
+  --app-bar-h: 56px;
+  --rail-w: 280px;
+
+  /* Bridge Pico v2 --pico-* tokens to the unprefixed names used in the app. */
+  --card-background-color: var(--pico-card-background-color, #fff);
+  --card-border-color:     var(--pico-card-sectionning-background-color, #f1f3f7);
+  --primary:               var(--pico-primary, #1b6ef3);
+  --primary-background:    #e8f0fe;
+  --primary-hover:         #154dbb;
+  --muted-color:           var(--pico-muted-color, #646b7d);
+  --muted-border-color:    var(--pico-muted-border-color, #d0d7e2);
+  --border-radius:         var(--pico-border-radius, 0.375rem);
+  --del-color:             #c62a2f;
+  --warn-color:            #b56500;
+  --bg-soft:               #f7f8fb;
+}
+
+/* ----- Pico density overrides ---------------------------------------------- */
+
+body {
+  background: var(--bg-soft);
+}
+
+/* Pico defaults give every form control a tall comfortable rhythm; the editor
+   shows dozens of fields per page, so we trim it. */
+input, select, textarea {
+  padding: 0.4rem 0.6rem;
+  margin: 0;
+  font-size: 0.95rem;
+  height: auto;
+}
+button {
+  font-size: 0.9rem;
+  padding: 0.4rem 0.85rem;
+  margin: 0;
+}
+label {
+  margin-bottom: 0.15rem;
+}
+
+/* ----- App shell ----------------------------------------------------------- */
+
+.app-shell {
+  display: grid;
+  grid-template-rows: var(--app-bar-h) 1fr;
+  min-height: 100vh;
+}
+
+.app-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 1.25rem;
+  background: var(--card-background-color);
+  border-bottom: 1px solid var(--muted-border-color);
+  height: var(--app-bar-h);
+}
+.app-bar-title {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+}
+.app-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.app-bar select {
+  width: auto;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.85rem;
+}
+.app-bar .icon-btn {
+  color: var(--muted-color);
+}
+
+.commit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.9rem;
+  background: var(--primary);
+  color: #fff;
+  border: 1px solid var(--primary);
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  cursor: pointer;
+}
+.commit-btn:hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+.commit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.changes-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  padding: 0 0.4rem;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* ----- Editor layout ------------------------------------------------------- */
+
+.editor-layout {
+  display: grid;
+  grid-template-columns: var(--rail-w) 1fr;
+  gap: 1.25rem;
+  padding: 1rem 1.25rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .editor-layout {
+    grid-template-columns: 1fr;
+  }
+  .rail {
+    position: static;
+  }
+}
+
+.rail {
+  position: sticky;
+  top: calc(var(--app-bar-h) + 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--card-background-color);
+  border: 1px solid var(--muted-border-color);
+  border-radius: var(--border-radius);
+}
+.rail .rail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.rail .rail-row {
+  display: flex;
+  gap: 0.4rem;
+}
+.rail .rail-row input { flex: 1; min-width: 0; }
+.rail .key-hint {
+  font-size: 0.75rem;
+  color: var(--muted-color);
+  margin-top: 0.1rem;
+}
+
+.main-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+.main-pane h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+}
+.main-pane .entity-empty {
+  color: var(--muted-color);
+  padding: 2rem;
+  text-align: center;
+  border: 1px dashed var(--muted-border-color);
+  border-radius: var(--border-radius);
+  background: var(--card-background-color);
+}
+
+/* ----- Card / section ------------------------------------------------------ */
+
+.card {
+  background: var(--card-background-color);
+  border: 1px solid var(--muted-border-color);
+  border-radius: var(--border-radius);
+  padding: 1rem 1.25rem;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 0.75rem 0;
+}
+.card-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* ----- Form labels & grids ------------------------------------------------- */
+
+.fields-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: var(--field-row-gap) 1rem;
+}
+
+.field-row {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.field-row > label,
+.field-row > .field-label,
+.rail .rail-field > label {
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-color);
+  font-weight: 600;
+  margin: 0;
+  display: block;
+}
+.field-row .field-required {
+  color: var(--del-color);
+  margin-left: 0.15rem;
+}
+
+/* List-of-inputs row ("authors": [a, b, c]) */
+.list-field-item {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+.list-field-item > :first-child { flex: 1; min-width: 0; }
+.list-field-item-group { margin-bottom: 0.4rem; }
+
+/* "+ Add" link-style button used by FieldInput and SourceBlockEditor */
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.4rem;
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: var(--border-radius);
+}
+.link-btn:hover {
+  background: var(--primary-background);
+}
+
+/* ----- Icon buttons -------------------------------------------------------- */
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius);
+  color: var(--muted-color);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.icon-btn:hover {
+  border-color: var(--muted-border-color);
+  color: var(--primary);
+  background: var(--primary-background);
+}
+.icon-btn.danger:hover {
+  color: var(--del-color);
+  background: #fbeaea;
+}
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.text-warning {
+  color: var(--warn-color);
+}
+
+/* ----- Statement list ------------------------------------------------------ */
+
+.statement-section { /* alias to .card with no extra rules */ }
+.statement-section .card-header h4 { font-size: 1rem; }
+
+.stmt-table {
+  width: 100%;
+  font-size: 0.9rem;
+  border-collapse: collapse;
+}
+.stmt-table th,
+.stmt-table td {
+  padding: 0.4rem 0.6rem;
+  vertical-align: middle;
+}
+.stmt-table thead th {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-color);
+  border-bottom: 1px solid var(--muted-border-color);
+}
+.stmt-table tbody tr {
+  border-bottom: 1px solid var(--muted-border-color);
+}
+.stmt-table tbody tr:last-child { border-bottom: none; }
+.stmt-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+.stmt-row-actions .stmt-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.8rem;
+  color: var(--muted-color);
+  margin: 0 0.25rem;
+}
+.stmt-row--deleted {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+.stmt-row--pending {
+  color: var(--muted-color);
+  font-style: italic;
+}
+
+/* Inline editor row — replaces the per-row dialog */
+.stmt-inline-editor > td {
+  background: var(--bg-soft);
+  border-left: 3px solid var(--primary);
+  padding: 1rem;
+}
+.stmt-inline-editor .inline-editor-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--field-row-gap) 1rem;
+}
+.stmt-inline-editor .inline-editor-sources {
+  grid-column: 1 / -1;
+}
+.stmt-inline-editor .inline-editor-footer {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.stmt-inline-editor .inline-editor-footer button {
+  padding: 0.4rem 1rem;
+}
+
+.stmt-empty {
+  padding: 0.75rem;
+  font-style: italic;
+  color: var(--muted-color);
+}
+
+/* ----- Source blocks (inside <details>) ------------------------------------ */
+
+.sources-section {
+  margin-top: 0.5rem;
+}
+.sources-section > summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--muted-color);
+  list-style: revert;
+}
+.sources-section .source-block {
+  position: relative;
+  border: 1px solid var(--muted-border-color);
+  border-radius: var(--border-radius);
+  padding: 0.6rem 0.75rem 0.5rem;
+  margin: 0.5rem 0;
+  background: var(--card-background-color);
+}
+.sources-section .source-block .source-remove {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+}
+
+/* ----- Item-search chip + suggestions -------------------------------------- */
+
+.search-wrap {
+  position: relative;
+}
+.suggestions {
+  position: absolute;
+  background: var(--card-background-color);
+  border: 1px solid var(--muted-border-color);
+  z-index: 100;
+  width: 100%;
+  max-height: 240px;
+  overflow-y: auto;
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+.suggestion-item {
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+}
+.suggestion-item:hover,
+.suggestion-item.active {
+  background: var(--primary-background);
+}
+.suggestion-label { font-weight: 500; }
+.suggestion-desc  { font-size: 0.82em; color: var(--muted-color); }
+.suggestion-id    { font-size: 0.8em; color: var(--muted-color); margin-left: 0.5rem; }
+
+.item-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--primary-background);
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+  padding: 0.2rem 0.5rem 0.2rem 0.75rem;
+  font-size: 0.9em;
+  max-width: 100%;
+}
+.item-chip-label {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.item-chip-id {
+  color: var(--muted-color);
+  font-size: 0.85em;
+}
+.item-chip .icon-btn {
+  width: 22px;
+  height: 22px;
+  color: var(--primary);
+}
+.item-chip .icon-btn:hover {
+  background: rgba(27, 110, 243, 0.15);
+}
+.item-chip .icon-btn.danger {
+  color: var(--del-color);
+}
+
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.search-row > input { flex: 1; min-width: 0; }
+
+/* ----- Banners / status ---------------------------------------------------- */
+
+.success-banner {
+  background: #d4edda;
+  color: #155724;
+  border-radius: var(--border-radius);
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.75rem;
+}
+.error-banner {
+  background: #f8d7da;
+  color: #721c24;
+  border-radius: var(--border-radius);
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--muted-color);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ----- Login --------------------------------------------------------------- */
+
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1rem;
+}
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 1.5rem;
+  background: var(--card-background-color);
+  border: 1px solid var(--muted-border-color);
+  border-radius: var(--border-radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+}
+.login-card .login-lang {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+.login-card .login-lang select {
+  width: auto;
+}
+
+/* ----- Diff table inside CommitDialog -------------------------------------- */
+
+dialog article { max-width: 760px; }
+.diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.75rem;
+}
+.diff-table th,
+.diff-table td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--muted-border-color);
+  vertical-align: top;
+}
+.diff-table thead th {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-color);
+  text-align: left;
+}
+.diff-table td:first-child { width: 30%; font-weight: 500; }
+.diff-op {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}

@@ -48,8 +48,8 @@ export default {
     };
   },
   template: `
-    <main class="container">
-      <article style="max-width:380px;margin:4rem auto;">
+    <main class="login-page">
+      <article class="login-card">
         <hgroup>
           <h2>{{ t('login_title') }}</h2>
           <p>{{ t('login_subtitle') }}</p>
@@ -60,8 +60,8 @@ export default {
           <label>{{ t('login_password') }} <input v-model="password" type="password" autocomplete="current-password" required /></label>
           <button type="submit" :aria-busy="loading">{{ t('login_submit') }}</button>
         </form>
-        <div style="text-align:center;margin-top:1rem">
-          <select :value="locale" @change="setLocale($event.target.value)" style="width:auto;display:inline-block">
+        <div class="login-lang">
+          <select :value="locale" @change="setLocale($event.target.value)">
             <option v-for="(label, code) in LANGUAGES" :key="code" :value="code">{{ label }}</option>
           </select>
         </div>

@@ -10,6 +10,7 @@ import {
 import { apiFetch } from "./api.js";
 import EntityEditor from "./components/EntityEditor.js";
 import FieldInput from "./components/FieldInput.js";
+import Icon from "./components/Icon.js";
 import LoginForm from "./components/LoginForm.js";
 import { useI18n } from "./i18n.js";
 
@@ -70,4 +71,6 @@ const app = createApp(App);
 // Register FieldInput globally so SourceBlockEditor can render `<field-input>` without
 // a static import (avoids a SourceBlockEditor ↔ FieldInput ESM circular dependency).
 app.component("FieldInput", FieldInput);
+// Icons are referenced from every component template; global registration keeps imports light.
+app.component("Icon", Icon);
 app.mount("#app");

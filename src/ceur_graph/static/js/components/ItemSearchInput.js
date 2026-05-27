@@ -191,13 +191,17 @@ export default {
       <div v-if="!isSearching && selectedQid" class="item-chip">
         <span class="item-chip-label">{{ selectedLabel || selectedQid }}</span>
         <span class="item-chip-id">({{ selectedQid }})</span>
-        <button class="item-chip-edit" type="button" @click="enterSearch" :title="t('search_change')">✎</button>
-        <button class="item-chip-edit" type="button" @click="clearSelection" :title="t('search_clear')">🗑</button>
+        <button class="icon-btn" type="button" @click="enterSearch" :title="t('search_change')">
+          <icon name="pencil" />
+        </button>
+        <button class="icon-btn danger" type="button" @click="clearSelection" :title="t('search_clear')">
+          <icon name="trash" />
+        </button>
       </div>
 
       <!-- Search mode -->
       <template v-else>
-        <div style="display:flex;gap:0.4rem;align-items:center">
+        <div class="search-row">
           <input
             v-model="searchText"
             type="text"
@@ -206,10 +210,11 @@ export default {
             @blur="onBlur"
             @keydown="onKey"
             autocomplete="off"
-            style="margin:0;flex:1"
           />
-          <button v-if="selectedQid" class="secondary outline" type="button"
-                  style="padding:0.2rem 0.5rem;margin:0" @click="cancelSearch" :title="t('search_cancel')">✕</button>
+          <button v-if="selectedQid" class="icon-btn" type="button"
+                  @click="cancelSearch" :title="t('search_cancel')">
+            <icon name="x" />
+          </button>
         </div>
         <div v-if="suggestions.length" class="suggestions">
           <div

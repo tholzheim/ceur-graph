@@ -41,22 +41,25 @@ export default {
     return { t, addBlock, removeBlock, updateField };
   },
   template: `
-    <details class="sources-section" style="margin-top:0.5rem">
-      <summary style="cursor:pointer">
+    <details class="sources-section">
+      <summary>
         {{ summaryLabel || t('stmt_sources_section') }}
         <span v-if="modelValue?.length" style="color:var(--muted-color)">({{ modelValue.length }})</span>
       </summary>
-      <div v-for="(src, idx) in (modelValue || [])" :key="idx" class="source-block"
-           style="border:1px solid var(--muted-border-color, var(--card-sectionning-background-color));padding:0.5rem 0.75rem;margin:0.5rem 0;border-radius:4px">
+      <div v-for="(src, idx) in (modelValue || [])" :key="idx" class="source-block">
+        <button class="icon-btn danger source-remove" type="button" :title="t('stmt_remove_source')"
+                @click="removeBlock(idx)">
+          <icon name="trash" />
+        </button>
         <div v-for="rf in referenceFields" :key="rf.name" class="field-row">
-          <label>
-            {{ rf.label }}
-            <field-input :field="rf" :model-value="src[rf.name]" @update:model-value="updateField(idx, rf.name, $event)" />
-          </label>
+          <label>{{ rf.label }}</label>
+          <field-input :field="rf" :model-value="src[rf.name]"
+                       @update:model-value="updateField(idx, rf.name, $event)" />
         </div>
-        <button class="secondary outline" type="button" style="padding:0.2rem 0.6rem;margin:0.25rem 0 0" @click="removeBlock(idx)">{{ t('stmt_remove_source') }}</button>
       </div>
-      <button class="outline" type="button" style="padding:0.3rem 0.8rem;margin-top:0.5rem" @click="addBlock">{{ t('stmt_add_source') }}</button>
+      <button class="link-btn" type="button" @click="addBlock">
+        <icon name="plus" /> {{ t('stmt_add_source') }}
+      </button>
     </details>
   `,
 };
