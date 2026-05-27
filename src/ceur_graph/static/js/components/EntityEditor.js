@@ -30,14 +30,16 @@ export default {
     const clearSignal = ref(0);
 
     function parseFormUrl() {
-      const parts = window.location.pathname.split('/').filter(Boolean);
-      if (parts[0] !== 'form') return null;
+      const parts = window.location.pathname.split("/").filter(Boolean);
+      if (parts[0] !== "form") return null;
       return { entitySlug: parts[1] ?? null, action: parts[2] ?? null };
     }
 
     function pushFormUrl(entitySlug, action = null) {
-      const path = action ? `/form/${entitySlug}/${action}` : `/form/${entitySlug}`;
-      history.pushState(null, '', path);
+      const path = action
+        ? `/form/${entitySlug}/${action}`
+        : `/form/${entitySlug}`;
+      history.pushState(null, "", path);
     }
 
     // schema is the flat list returned by /api/schema/entities
@@ -73,6 +75,9 @@ export default {
         selectedEntity.value.fields.forEach((f) => {
           if (f.field_type === "statement_list") return;
           pendingData[f.name] = f.field_type === "list" ? [] : "";
+          if (f.supports_references) {
+            pendingData[`${f.name}_sources`] = [];
+          }
         });
       }
       loadError.value = "";
@@ -100,7 +105,10 @@ export default {
         if (!data) return;
         loadedData.value = data;
         isNew.value = false;
-        pushFormUrl(selectedEntityName.value.toLowerCase(), qidInput.value.trim());
+        pushFormUrl(
+          selectedEntityName.value.toLowerCase(),
+          qidInput.value.trim(),
+        );
         Object.keys(pendingStatements).forEach(
           (k) => delete pendingStatements[k],
         );
@@ -110,6 +118,9 @@ export default {
           if (f.field_type === "statement_list") return;
           pendingData[f.name] =
             data[f.name] ?? (f.field_type === "list" ? [] : "");
+          if (f.supports_references) {
+            pendingData[`${f.name}_sources`] = data[`${f.name}_sources`] ?? [];
+          }
         });
       } catch (e) {
         loadError.value = e.message;
@@ -123,7 +134,7 @@ export default {
       isNew.value = true;
       resetForm();
       if (selectedEntityName.value) {
-        pushFormUrl(selectedEntityName.value.toLowerCase(), 'new');
+        pushFormUrl(selectedEntityName.value.toLowerCase(), "new");
       }
     }
 
@@ -139,7 +150,11 @@ export default {
       loadedData.value = entity;
       if (entity?.qid) {
         qidInput.value = entity.qid;
-        history.replaceState(null, '', `/form/${selectedEntityName.value.toLowerCase()}/${entity.qid}`);
+        history.replaceState(
+          null,
+          "",
+          `/form/${selectedEntityName.value.toLowerCase()}/${entity.qid}`,
+        );
       }
       isNew.value = false;
       // Clear pending statements after successful commit
@@ -169,7 +184,7 @@ export default {
       selectedEntityName.value = match.name;
       await nextTick();
       initializing = false;
-      if (parsed.action === 'new') {
+      if (parsed.action === "new") {
         startNew();
       } else if (parsed.action) {
         qidInput.value = parsed.action;
@@ -254,7 +269,13 @@ export default {
           <div v-for="f in simpleFields" :key="f.name" class="field-row">
             <label>
               {{ f.label }}<span v-if="f.required" style="color:red">*</span>
-              <field-input :field="f" v-model="pendingData[f.name]" />
+              <field-input v-if="!f.supports_references"
+                           :field="f"
+                           v-model="pendingData[f.name]" />
+              <field-input v-else
+                           :field="f"
+                           v-model="pendingData[f.name]"
+                           v-model:sources="pendingData[f.name + '_sources']" />
             </label>
           </div>
 

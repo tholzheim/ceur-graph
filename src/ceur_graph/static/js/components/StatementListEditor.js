@@ -2,12 +2,13 @@ import { apiFetch } from "../api.js";
 import { useI18n } from "../i18n.js";
 import { getLabel } from "../labelCache.js";
 import FieldInput from "./FieldInput.js";
+import SourceBlockEditor from "./SourceBlockEditor.js";
 
 let _nextId = 0;
 
 export default {
   name: "StatementListEditor",
-  components: { FieldInput },
+  components: { FieldInput, SourceBlockEditor },
   emits: ["update:pending"],
   props: {
     field: { type: Object, required: true },
@@ -126,6 +127,36 @@ export default {
       },
     );
 
+    // --- Sources (Wikibase reference blocks) helpers ---
+    function emptySource() {
+      const block = {};
+      (props.field.reference_fields || []).forEach((rf) => {
+        block[rf.name] = rf.field_type === "list" ? [] : "";
+      });
+      return block;
+    }
+
+    function cloneSources(srcArr) {
+      if (!Array.isArray(srcArr)) return [];
+      return srcArr.map((s) => ({ ...emptySource(), ...s }));
+    }
+
+    function sourceBlockHasValue(block) {
+      return (props.field.reference_fields || []).some((rf) => {
+        const v = block?.[rf.name];
+        if (Array.isArray(v)) return v.some((x) => x !== "" && x != null);
+        return v !== "" && v != null;
+      });
+    }
+
+    function effectiveSources(row) {
+      if (!row) return [];
+      const sid = row.statement_id;
+      const edit = sid ? pendingEditMap.value[sid] : null;
+      const eff = edit?.displayRow ?? row.displayRow ?? row;
+      return Array.isArray(eff?.sources) ? eff.sources : [];
+    }
+
     // --- Dialog open ---
     function openNew() {
       editingRow.value = null;
@@ -133,6 +164,7 @@ export default {
       props.field.statement_fields.forEach((f) => {
         formData[f.name] = f.field_type === "list" ? [] : "";
       });
+      formData.sources = [];
       // Default snak type to unknown_value (matches model default of "somevalue")
       snakType.value = "unknown_value";
       if (subjectField.value) formData[subjectField.value.name] = "somevalue";
@@ -154,6 +186,7 @@ export default {
       props.field.statement_fields.forEach((f) => {
         formData[f.name] = src[f.name] ?? (f.field_type === "list" ? [] : "");
       });
+      formData.sources = cloneSources(src.sources);
       if (subjectField.value && enforceUnknownStmtName.value) {
         snakType.value = snakTypeFromValue(src[subjectField.value.name] ?? "");
       }
@@ -173,6 +206,11 @@ export default {
           body[f.name] = body[f.name].filter((v) => v !== "" && v != null);
         }
       });
+      if (props.field.supports_references) {
+        body.sources = (formData.sources || []).filter(sourceBlockHasValue);
+      } else {
+        delete body.sources;
+      }
 
       if (editingRow.value) {
         if (editingRow.value._id !== undefined) {
@@ -288,6 +326,7 @@ export default {
       snakType,
       subjectField,
       enforceUnknownStmtName,
+      effectiveSources,
       t,
     };
   },
@@ -320,6 +359,7 @@ export default {
               </template>
               <template v-else>
                 <button class="outline" style="padding:0.2rem 0.6rem;margin:0 0.25rem 0 0" @click="openEdit(row)">{{ t('stmt_edit_button') }}</button>
+                <span v-if="effectiveSources(row).length" :title="t('stmt_source_count', { count: effectiveSources(row).length })" style="font-size:0.85em;margin-right:0.25rem">📚 {{ effectiveSources(row).length }}</span>
                 <span v-if="pendingEditMap[row.statement_id]" style="color:orange;font-size:0.8em;margin-right:0.25rem">⚠</span>
                 <template v-if="deleteConfirm === row">
                   <small>{{ t('stmt_delete_confirm') }} </small>
@@ -337,6 +377,7 @@ export default {
             <td>
               <button class="outline" style="padding:0.2rem 0.6rem;margin:0 0.25rem 0 0" @click="openEdit(op)">{{ t('stmt_edit_button') }}</button>
               <button class="secondary outline" style="padding:0.2rem 0.6rem;margin:0 0.25rem 0 0" @click="undoOp(op._id)">{{ t('stmt_remove_button') }}</button>
+              <span v-if="op.displayRow?.sources?.length" :title="t('stmt_source_count', { count: op.displayRow.sources.length })" style="font-size:0.85em;margin-right:0.25rem">📚 {{ op.displayRow.sources.length }}</span>
               <span style="color:orange;font-size:0.8em">{{ t('stmt_pending') }}</span>
             </td>
           </tr>
@@ -396,6 +437,13 @@ export default {
               </div>
 
             </template>
+
+            <!-- Wikibase reference blocks (provenance) — collapsed by default -->
+            <source-block-editor v-if="field.supports_references"
+                                 :reference-fields="field.reference_fields"
+                                 v-model="formData.sources" />
+
+
             <footer>
               <button class="secondary outline" type="button" @click="closeDialog">{{ t('stmt_cancel_button') }}</button>
               <button type="submit">{{ t('stmt_save_button') }}</button>

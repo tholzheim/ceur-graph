@@ -1,7 +1,7 @@
 """Frontend routes: schema metadata endpoint, entity-search proxy, and SPA shell."""
 
 from pathlib import Path
-from typing import Any
+from typing import get_args
 
 import httpx
 import yaml
@@ -9,15 +9,15 @@ from fastapi import APIRouter, Query
 from fastapi.responses import FileResponse
 
 from ceur_graph.codegen import get_models
-from ceur_graph.datamodel.item import CEUR_DEV_ID, WIKIBASE_TYPE, StatementBase
-from ceur_graph.wbgenerator import _is_list_annotation, get_statement_field_type
+from ceur_graph.datamodel.item import CEUR_DEV_ID, WIKIBASE_TYPE, WikibaseReferenceBase
+from ceur_graph.wbgenerator import _is_list_annotation, _wikibase_reference_class, get_statement_field_type
 
 _SCHEMA_PATH = Path(__file__).parent.parent / "schema" / "ceur_graph.yaml"
 _STATIC_DIR = Path(__file__).parent.parent / "static"
 
 router = APIRouter()
 
-_SKIP_FIELDS = {"qid", "statement_id"}
+_SKIP_FIELDS = {"qid", "statement_id", "sources"}
 _INTERNAL_WB_IDS = {"rdf:subject", "rdfs:label", "schema:description"}
 
 
@@ -30,8 +30,11 @@ def _wikibase_type(field_info) -> str | None:
 
 def _is_required(field_info) -> bool:
     from pydantic_core import PydanticUndefinedType
-    return not isinstance(field_info.default, PydanticUndefinedType) and field_info.default is ... or (
-        field_info.default is ... and field_info.default_factory is None
+
+    return (
+        not isinstance(field_info.default, PydanticUndefinedType)
+        and field_info.default is ...
+        or (field_info.default is ... and field_info.default_factory is None)
     )
 
 
@@ -64,6 +67,34 @@ def _build_statement_fields(stmt_cls: type) -> list[dict]:
     return fields
 
 
+def _reference_class_for(stmt_cls: type) -> type[WikibaseReferenceBase] | None:
+    """Return the WikibaseReference subclass attached via the `sources` field, or None."""
+    sources_field = stmt_cls.model_fields.get("sources")
+    if sources_field is None:
+        return None
+    for arg in get_args(sources_field.annotation):
+        if isinstance(arg, type) and issubclass(arg, WikibaseReferenceBase):
+            return arg
+    return None
+
+
+def _build_reference_fields(ref_cls: type[WikibaseReferenceBase]) -> list[dict]:
+    """Return frontend field descriptors for a WikibaseReference inner class."""
+    fields = []
+    for fname in ref_cls.get_reference_fields(CEUR_DEV_ID):
+        finfo = ref_cls.model_fields[fname]
+        fields.append(
+            {
+                "name": fname,
+                "label": _label(fname),
+                "wikibase_type": _wikibase_type(finfo),
+                "field_type": "list" if _is_list_annotation(finfo.annotation) else "single",
+                "required": finfo.is_required(),
+            }
+        )
+    return fields
+
+
 def _build_entity_schema(
     entity_name: str,
     model_cls: type,
@@ -75,16 +106,21 @@ def _build_entity_schema(
     # Always expose label and description as top-level text inputs
     for meta_name, meta_label in [("label", "Label"), ("description", "Description")]:
         if meta_name in model_cls.model_fields:
-            fields.append({
-                "name": meta_name,
-                "label": meta_label,
-                "field_type": "single",
-                "wikibase_type": "string",
-                "required": True,
-            })
+            fields.append(
+                {
+                    "name": meta_name,
+                    "label": meta_label,
+                    "field_type": "single",
+                    "wikibase_type": "string",
+                    "required": True,
+                }
+            )
 
     for fname, finfo in model_cls.model_fields.items():
         if fname in _SKIP_FIELDS or fname in {"label", "description"}:
+            continue
+        # `<X>_sources` companions are rendered alongside their base field, not as separate inputs.
+        if fname.endswith("_sources"):
             continue
 
         extra = finfo.json_schema_extra if isinstance(finfo.json_schema_extra, dict) else {}
@@ -98,31 +134,48 @@ def _build_entity_schema(
             stmt_name = stmt_type.__name__
             # Find matching endpoint
             stmt_endpoint = next(
-                (ep for ep in endpoints if ep.get("model") == stmt_name and ep.get("type") == "statement"
-                 and ep.get("parent_param", "").startswith(entity_name[0].lower())),
+                (
+                    ep
+                    for ep in endpoints
+                    if ep.get("model") == stmt_name
+                    and ep.get("type") == "statement"
+                    and ep.get("parent_param", "").startswith(entity_name[0].lower())
+                ),
                 None,
             )
-            fields.append({
-                "name": fname,
-                "label": _label(fname),
-                "field_type": "statement_list",
-                "statement_model": stmt_name,
-                "statement_endpoint": stmt_endpoint["prefix"] if stmt_endpoint else None,
-                "statement_fields": _build_statement_fields(stmt_type),
-                "enforce_unknown_stmt_name": bool(getattr(stmt_type, "_enforce_unknown_stmt_name", False)),
-            })
+            ref_cls = _reference_class_for(stmt_type)
+            fields.append(
+                {
+                    "name": fname,
+                    "label": _label(fname),
+                    "field_type": "statement_list",
+                    "statement_model": stmt_name,
+                    "statement_endpoint": stmt_endpoint["prefix"] if stmt_endpoint else None,
+                    "statement_fields": _build_statement_fields(stmt_type),
+                    "enforce_unknown_stmt_name": bool(getattr(stmt_type, "_enforce_unknown_stmt_name", False)),
+                    "supports_references": ref_cls is not None,
+                    "reference_fields": _build_reference_fields(ref_cls) if ref_cls is not None else [],
+                }
+            )
             continue
 
         if not ceur_id or ceur_id in _INTERNAL_WB_IDS:
             continue
 
-        fields.append({
+        descriptor: dict = {
             "name": fname,
             "label": _label(fname),
             "field_type": "list" if _is_list_annotation(finfo.annotation) else "single",
             "wikibase_type": _wikibase_type(finfo),
             "required": finfo.is_required(),
-        })
+        }
+        sources_field = model_cls.model_fields.get(f"{fname}_sources")
+        if sources_field is not None:
+            ref_cls = _wikibase_reference_class(sources_field)
+            if ref_cls is not None:
+                descriptor["supports_references"] = True
+                descriptor["reference_fields"] = _build_reference_fields(ref_cls)
+        fields.append(descriptor)
 
     return {"name": entity_name, "fields": fields}
 

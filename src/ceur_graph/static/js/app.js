@@ -1,6 +1,15 @@
-import { computed, createApp, nextTick, onMounted, reactive, ref, watch } from "vue";
+import {
+  computed,
+  createApp,
+  nextTick,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from "vue";
 import { apiFetch } from "./api.js";
 import EntityEditor from "./components/EntityEditor.js";
+import FieldInput from "./components/FieldInput.js";
 import LoginForm from "./components/LoginForm.js";
 import { useI18n } from "./i18n.js";
 
@@ -57,4 +66,8 @@ const App = {
   `,
 };
 
-createApp(App).mount("#app");
+const app = createApp(App);
+// Register FieldInput globally so SourceBlockEditor can render `<field-input>` without
+// a static import (avoids a SourceBlockEditor ↔ FieldInput ESM circular dependency).
+app.component("FieldInput", FieldInput);
+app.mount("#app");

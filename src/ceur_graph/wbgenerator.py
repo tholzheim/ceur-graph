@@ -8,6 +8,7 @@ from wikibaseintegrator import WikibaseIntegrator, datatypes
 from wikibaseintegrator.datatypes import BaseDataType
 from wikibaseintegrator.entities import ItemEntity
 from wikibaseintegrator.models import Claim, Snak
+from wikibaseintegrator.models.references import Reference as WBIReference
 from wikibaseintegrator.wbi_enums import ActionIfExists, WikibaseSnakType
 
 from ceur_graph.datamodel.item import (
@@ -17,6 +18,7 @@ from ceur_graph.datamodel.item import (
     ExtractedStatement,
     Statement,
     StatementBase,
+    WikibaseReferenceBase,
 )
 from ceur_graph.wikibase import Wikibase
 
@@ -33,9 +35,7 @@ def get_statement_field_type(annotation) -> type[StatementBase] | None:
         args = get_args(annotation)
         if args and isinstance(args[0], type) and issubclass(args[0], StatementBase):
             return args[0]
-    elif origin is Union or (
-        hasattr(_types_module, "UnionType") and isinstance(annotation, _types_module.UnionType)
-    ):
+    elif origin is Union or (hasattr(_types_module, "UnionType") and isinstance(annotation, _types_module.UnionType)):
         for arg in get_args(annotation):
             if isinstance(arg, type) and issubclass(arg, StatementBase):
                 return arg
@@ -50,14 +50,33 @@ def _get_schema_extra(field_metadata: FieldInfo) -> dict:
     return extra if isinstance(extra, dict) else {}
 
 
+def _remove_property_claims(item: ItemEntity, prop_nr: str) -> None:
+    """
+    Remove every claim under ``prop_nr`` from ``item``.
+
+    Works around a bug in WikibaseIntegrator's ``Claims.remove`` where it iterates over the
+    internal list while mutating it, skipping every other no-id claim. We iterate a copy.
+    Claims with an id (i.e. already persisted in Wikibase) are flagged removed; in-memory
+    claims without an id are dropped from the internal list.
+    """
+    internal: dict = item.claims.claims
+    if prop_nr not in internal:
+        return
+    for claim in list(internal[prop_nr]):
+        if claim.id:
+            claim.remove()
+        else:
+            internal[prop_nr].remove(claim)
+    if not internal[prop_nr]:
+        del internal[prop_nr]
+
+
 def _is_list_annotation(annotation) -> bool:
     """Return True if annotation is list[T] or list[T] | None (Optional list)."""
     origin = get_origin(annotation)
     if origin is list:
         return True
-    if origin is Union or (
-        hasattr(_types_module, "UnionType") and isinstance(annotation, _types_module.UnionType)
-    ):
+    if origin is Union or (hasattr(_types_module, "UnionType") and isinstance(annotation, _types_module.UnionType)):
         return any(get_origin(arg) is list for arg in get_args(annotation))
     return False
 
@@ -73,6 +92,7 @@ def create_item_from_model(model: BaseModel, wbi: WikibaseIntegrator) -> ItemEnt
 
     field_name: str
     field_metadata: FieldInfo
+    model_cls = type(model)
     for field_name, field_metadata in model.model_fields.items():
         field_value = getattr(model, field_name)
         if field_value is None:
@@ -98,22 +118,34 @@ def create_item_from_model(model: BaseModel, wbi: WikibaseIntegrator) -> ItemEnt
         elif field_prop_id == "schema:description":
             item.descriptions.set(default_language, field_value)
         else:
+            sources_field_name = f"{field_name}_sources"
+            sources_value = (
+                getattr(model, sources_field_name, None) if sources_field_name in model_cls.model_fields else None
+            )
+            is_list_field = isinstance(field_value, list)
+            values = field_value if is_list_field else [field_value]
             claims = []
-            if isinstance(field_value, list):
-                values = field_value
-            else:
-                values = [field_value]
-            for value in values:
+            for idx, value in enumerate(values):
                 claim = get_claim(
                     prop_id=field_prop_id,
                     datatype=field_type,
                     value=value,
                     language=default_language,
                 )
-                if claim is not None:
-                    claims.append(claim)
+                if claim is None:
+                    continue
+                if sources_value is not None:
+                    if is_list_field:
+                        block_models = sources_value[idx] if idx < len(sources_value) else None
+                    else:
+                        block_models = sources_value
+                    _attach_reference_blocks(claim, block_models)
+                claims.append(claim)
+            # Multivalued direct properties need FORCE_APPEND so each claim coexists; for a single
+            # value, the default REPLACE_ALL is correct (one claim per property).
+            add_action = ActionIfExists.FORCE_APPEND if is_list_field else ActionIfExists.REPLACE_ALL
             for claim in claims:
-                item.claims.add(claim)
+                item.claims.add(claim, action_if_exists=add_action)
     return item
 
 
@@ -125,6 +157,7 @@ def update_item_from_model(model: BaseModel, item: ItemEntity):
     :return:
     """
     default_language = "en"
+    model_cls = type(model)
     for field_name in model.model_fields_set:
         field_value: Any = getattr(model, field_name)
         field_metadata: FieldInfo = model.model_fields.get(field_name)
@@ -135,7 +168,7 @@ def update_item_from_model(model: BaseModel, item: ItemEntity):
             subject_field = stmt_type.get_statement_subject(CEUR_DEV_ID)
             subject_prop_id = stmt_type.model_fields[subject_field].json_schema_extra.get(CEUR_DEV_ID)
             subject_prop_nr = Wikibase.get_entity_id(subject_prop_id)
-            item.claims.remove(subject_prop_nr)
+            _remove_property_claims(item, subject_prop_nr)
             values = field_value if isinstance(field_value, list) else ([field_value] if field_value else [])
             for stmt in values:
                 if stmt is not None:
@@ -166,7 +199,7 @@ def update_item_from_model(model: BaseModel, item: ItemEntity):
             is_list = _is_list_annotation(field_metadata.annotation)
             if field_value is None:
                 prop_nr = Wikibase.get_entity_id(field_prop_id)
-                item.claims.remove(prop_nr)
+                _remove_property_claims(item, prop_nr)
                 continue
             values = field_value if isinstance(field_value, list) else [field_value]
             claims = [
@@ -183,16 +216,13 @@ def update_item_from_model(model: BaseModel, item: ItemEntity):
             prop_nr = Wikibase.get_entity_id(field_prop_id)
 
             if is_list:
-                item.claims.remove(prop_nr)
-                item.claims.add(claims)
+                _remove_property_claims(item, prop_nr)
+                for claim in claims:
+                    item.claims.add(claim, action_if_exists=ActionIfExists.FORCE_APPEND)
             elif field_type == datatypes.MonolingualText.DTYPE:
                 existing = item.claims.get(prop_nr)
                 matched = next(
-                    (
-                        c
-                        for c in existing
-                        if c.mainsnak.datavalue.get("value", {}).get("language") == default_language
-                    ),
+                    (c for c in existing if c.mainsnak.datavalue.get("value", {}).get("language") == default_language),
                     None,
                 )
                 if matched is not None:
@@ -205,6 +235,43 @@ def update_item_from_model(model: BaseModel, item: ItemEntity):
                     existing[0].mainsnak = claims[0].mainsnak
                 else:
                     item.claims.add(claims[0])
+
+    # Second pass: re-attach direct-property references for every `<field>_sources` set on the model.
+    for sources_field_name in model.model_fields_set:
+        if not sources_field_name.endswith("_sources"):
+            continue
+        base_name = sources_field_name[: -len("_sources")]
+        if not base_name or base_name not in model_cls.model_fields:
+            continue
+        base_metadata: FieldInfo = model_cls.model_fields[base_name]
+        base_extra = _get_schema_extra(base_metadata)
+        base_prop_id = base_extra.get(CEUR_DEV_ID)
+        if not base_prop_id or base_prop_id in {"rdf:subject", "rdfs:label", "schema:description"}:
+            continue
+        base_prop_nr = Wikibase.get_entity_id(base_prop_id)
+        sources_value = getattr(model, sources_field_name) or []
+        existing_claims = [c for c in (item.claims.get(base_prop_nr) or []) if not c.removed]
+        if _is_list_annotation(base_metadata.annotation):
+            for i, claim in enumerate(existing_claims):
+                claim.references.clear()
+                if i < len(sources_value):
+                    _attach_reference_blocks(claim, sources_value[i])
+        else:
+            base_wb_type = base_extra.get(WIKIBASE_TYPE)
+            if base_wb_type == datatypes.MonolingualText.DTYPE:
+                target = next(
+                    (
+                        c
+                        for c in existing_claims
+                        if c.mainsnak.datavalue.get("value", {}).get("language") == default_language
+                    ),
+                    existing_claims[0] if existing_claims else None,
+                )
+            else:
+                target = existing_claims[0] if existing_claims else None
+            if target is not None:
+                target.references.clear()
+                _attach_reference_blocks(target, sources_value)
 
 
 def get_claim(prop_id: str, datatype: str, value: Any, language: str | None = None) -> Claim | None:
@@ -307,11 +374,16 @@ def get_model_from_item(item: ItemEntity, model: type[BaseModel]) -> BaseModel:
         else:
             prop_nr = Wikibase.get_entity_id(field_prop_id)
             field_type = extra.get(WIKIBASE_TYPE)
-            claims: list[Claim] = item.claims.get(prop_nr)
+            claims: list[Claim] = [c for c in item.claims.get(prop_nr) if not c.removed]
+            sources_field_name = f"{field_name}_sources"
+            sources_field = model.model_fields.get(sources_field_name)
+            ref_cls = _wikibase_reference_class(sources_field) if sources_field is not None else None
             if _is_list_annotation(field_metadata.annotation):
                 values = [get_snak_value(claim.mainsnak) for claim in claims]
                 values = [value for value in values if value is not None]
                 field_value = values
+                if ref_cls is not None:
+                    record[sources_field_name] = [_extract_reference_records(c, ref_cls) for c in claims]
             else:
                 if field_type == datatypes.MonolingualText.DTYPE:
                     claim = next(
@@ -326,6 +398,8 @@ def get_model_from_item(item: ItemEntity, model: type[BaseModel]) -> BaseModel:
                     claim = claims[0] if claims else None
                 if claim is not None:
                     field_value = get_snak_value(claim.mainsnak)
+                if ref_cls is not None:
+                    record[sources_field_name] = _extract_reference_records(claim, ref_cls) if claim else []
         if field_value is not None:
             record[field_name] = field_value
     return model.model_validate(record)
@@ -389,6 +463,9 @@ def get_model_from_qualified_statement(claim: Claim, model: type[StatementBase])
                         f"supports one value"
                     )
                 record[qualifier_field] = get_snak_value(qualifier[0])
+    sources = populate_references_from_claim(claim, model)
+    if sources is not None:
+        record["sources"] = sources
     model_obj = model.model_validate(record)
     return model_obj
 
@@ -460,7 +537,103 @@ def create_qualified_statement_from_model(model: StatementBase) -> Claim:
             value=subject_val,
         )
     add_qualifier_values_to_statement(claim, model)
+    add_references_to_statement(claim, model)
     return claim
+
+
+def _wikibase_reference_class(field_info: FieldInfo) -> type[WikibaseReferenceBase] | None:
+    """
+    Return the WikibaseReference subclass referenced by a `*_sources` field's annotation,
+    handling both `list[Ref]` (single-valued slot) and `list[list[Ref]]` (multivalued slot).
+    Also unwraps `Optional[...]` introduced by partial Update models.
+    """
+    ann = field_info.annotation
+    if get_origin(ann) is Union or (hasattr(_types_module, "UnionType") and isinstance(ann, _types_module.UnionType)):
+        non_none = [a for a in get_args(ann) if a is not type(None)]
+        if len(non_none) == 1:
+            ann = non_none[0]
+    if get_origin(ann) is not list:
+        return None
+    args = get_args(ann)
+    if not args:
+        return None
+    inner = args[0]
+    if isinstance(inner, type) and issubclass(inner, WikibaseReferenceBase):
+        return inner
+    if get_origin(inner) is list:
+        inner_args = get_args(inner)
+        if inner_args and isinstance(inner_args[0], type) and issubclass(inner_args[0], WikibaseReferenceBase):
+            return inner_args[0]
+    return None
+
+
+def _build_reference_block(ref_model: WikibaseReferenceBase) -> WBIReference | None:
+    """Build one WBIReference block from a WikibaseReference instance. Returns None if empty."""
+    ref_block = WBIReference()
+    for ref_field in ref_model.get_reference_fields(CEUR_DEV_ID):
+        value = getattr(ref_model, ref_field, None)
+        if value is None:
+            continue
+        meta = type(ref_model).model_fields[ref_field]
+        extra = meta.json_schema_extra if isinstance(meta.json_schema_extra, dict) else {}
+        snak_claim = get_claim(
+            prop_id=extra.get(CEUR_DEV_ID),
+            datatype=extra.get(WIKIBASE_TYPE),
+            value=value,
+        )
+        if snak_claim is not None:
+            ref_block.add(snak_claim)
+    return ref_block if len(ref_block) > 0 else None
+
+
+def _attach_reference_blocks(claim: Claim, ref_models: list[WikibaseReferenceBase] | None) -> None:
+    """Append non-empty reference blocks built from the given WikibaseReference instances to claim.references."""
+    if not ref_models:
+        return
+    for ref_model in ref_models:
+        block = _build_reference_block(ref_model)
+        if block is not None:
+            claim.references.add(block)
+
+
+def _extract_reference_records(claim: Claim, ref_cls: type[WikibaseReferenceBase]) -> list[dict]:
+    """Build the list of source dicts from claim.references suitable for ``model_validate``."""
+    sources: list[dict] = []
+    for ref_block in claim.references:
+        block_record: dict = {}
+        for ref_field in ref_cls.get_reference_fields(CEUR_DEV_ID):
+            meta = ref_cls.model_fields[ref_field]
+            extra = meta.json_schema_extra if isinstance(meta.json_schema_extra, dict) else {}
+            prop_id = extra.get(CEUR_DEV_ID)
+            prop_nr = Wikibase.get_entity_id(prop_id) if prop_id else None
+            if prop_nr is None:
+                continue
+            snaks = ref_block.snaks.get(prop_nr)
+            if not snaks:
+                continue
+            block_record[ref_field] = get_snak_value(snaks[0])
+        if block_record:
+            sources.append(block_record)
+    return sources
+
+
+def add_references_to_statement(claim: Claim, model: StatementBase) -> None:
+    """Attach Wikibase reference blocks (claim.references) from a statement model's ``sources`` field."""
+    _attach_reference_blocks(claim, getattr(model, "sources", None))
+
+
+def populate_references_from_claim(claim: Claim, model_cls: type[StatementBase]) -> list[dict] | None:
+    """
+    Build the list of source dicts (suitable for record["sources"]) from claim.references.
+    Returns None if model_cls has no sources field.
+    """
+    sources_field = model_cls.model_fields.get("sources")
+    if sources_field is None:
+        return None
+    ref_cls = _wikibase_reference_class(sources_field)
+    if ref_cls is None:
+        return None
+    return _extract_reference_records(claim, ref_cls)
 
 
 def add_qualifier_values_to_statement(claim: Claim, model: StatementBase):
@@ -586,3 +759,7 @@ def update_qualified_statement_from_model(item: ItemEntity, statement_id: str, m
         for qualifier_snak in claim.qualifiers.get(qualifier_prop_nr):
             claim.qualifiers.remove(qualifier_snak)
     add_qualifier_values_to_statement(claim, model)
+    if "sources" in model.model_fields_set:
+        # Reference blocks are replaced wholesale: clear and re-add from model.sources.
+        claim.references.clear()
+        add_references_to_statement(claim, model)

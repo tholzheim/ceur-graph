@@ -18,8 +18,12 @@ from ceur_graph.datamodel.item import (
     ItemBase,
     ItemStatementSubjectType,
     Statement,
+    WikibaseReferenceBase,
 )
 from ceur_graph.datamodel.utils import make_partial_model
+
+WIKIBASE_REFERENCE_CLASS_NAME = "WikibaseReference"
+SUPPORTS_REFERENCES_ANNOTATION = "supports_references"
 
 RANGE_TO_PYTHON: dict[str, Any] = {
     "string": str,
@@ -43,6 +47,7 @@ WIKIBASE_DTYPE_MAP: dict[str, str] = {
 PYTHON_BASE_INFO: dict[str, tuple[type, type]] = {
     "entity_item": (EntityBase, ItemBase),
     "extracted_statement": (ExtractedStatement, Statement),
+    "wikibase_reference": (WikibaseReferenceBase, WikibaseReferenceBase),
 }
 
 
@@ -64,8 +69,16 @@ def _ann_dict(annotations) -> dict[str, str]:
 
 
 def _slot_annotations(view: SchemaView, slot_name: str, class_name: str, induced_slot) -> dict[str, str]:
-    """Return merged annotations for a slot in a class, with slot_usage taking priority."""
-    anns = _ann_dict(induced_slot.annotations)
+    """Return merged annotations for a slot in a class.
+
+    LinkML SchemaView.induced_slot replaces (does not merge) annotations when slot_usage is present.
+    To get a true merge we start from the global slot definition's annotations and then layer the
+    current class's slot_usage annotations on top (slot_usage wins on conflicts).
+    """
+    base_slot = view.get_slot(slot_name)
+    anns: dict[str, str] = _ann_dict(base_slot.annotations) if base_slot else {}
+    # Also include whatever the induced slot carries (handles inherited slot_usage from ancestors).
+    anns.update(_ann_dict(induced_slot.annotations))
     cls_def = view.get_class(class_name)
     if cls_def and cls_def.slot_usage and slot_name in cls_def.slot_usage:
         su = cls_def.slot_usage[slot_name]
@@ -78,6 +91,24 @@ def _is_statement_subject(anns: dict[str, str]) -> bool:
     val = anns.get("ceur_dev_id", "")
     parts = val.split("/")
     return len(parts) >= 2 and parts[-2] == "statement"
+
+
+def _truthy(val) -> bool:
+    """Treat True and the string 'true' (any case) as truthy. Everything else is falsy."""
+    return val is True or (isinstance(val, str) and val.lower() == "true")
+
+
+def _class_needs_wikibase_reference(view: SchemaView, cls) -> bool:
+    """A class depends on WikibaseReference when it (a) opts in at class level, or
+    (b) opts in any of its slots via slot_usage/slot annotations."""
+    if _truthy(_ann_dict(cls.annotations).get(SUPPORTS_REFERENCES_ANNOTATION)):
+        return True
+    for slot_name in cls.slots or []:
+        induced = view.induced_slot(slot_name, cls.name)
+        anns = _slot_annotations(view, slot_name, cls.name, induced)
+        if _truthy(anns.get(SUPPORTS_REFERENCES_ANNOTATION)):
+            return True
+    return False
 
 
 def _build_field_def(
@@ -141,10 +172,13 @@ def _topological_order(view: SchemaView) -> list[str]:
         if cls.is_a:
             visit(cls.is_a)
         # Treat slot ranges that are schema classes as dependencies
-        for slot_name in (cls.slots or []):
+        for slot_name in cls.slots or []:
             slot_def = view.get_slot(slot_name)
             if slot_def and slot_def.range in all_class_names:
                 visit(slot_def.range)
+        # supports_references opt-in (class-level or slot-level) induces a dependency on WikibaseReference
+        if _class_needs_wikibase_reference(view, cls) and WIKIBASE_REFERENCE_CLASS_NAME in all_class_names:
+            visit(WIKIBASE_REFERENCE_CLASS_NAME)
         result.append(name)
 
     for name in view.all_classes():
@@ -188,6 +222,7 @@ def generate_models(schema_path: Path) -> dict[str, type]:
         slots_to_gen = own_slots_ordered + slot_usage_only
 
         field_defs: dict[str, tuple[Any, Any]] = {}
+        ref_cls = models.get(WIKIBASE_REFERENCE_CLASS_NAME)
         for slot_name in slots_to_gen:
             induced = view.induced_slot(slot_name, class_name)
             anns = _slot_annotations(view, slot_name, class_name, induced)
@@ -198,6 +233,15 @@ def generate_models(schema_path: Path) -> dict[str, type]:
 
             py_type, field_info = _build_field_def(induced, anns, is_req, is_stmt_subj, models)
             field_defs[slot_name] = (py_type, field_info)
+
+            # Slot-level supports_references: pair the slot with a sibling `<slot>_sources` field.
+            if _truthy(anns.get(SUPPORTS_REFERENCES_ANNOTATION)) and ref_cls is not None:
+                sources_type: Any = list[list[ref_cls]] if induced.multivalued else list[ref_cls]
+                field_defs[f"{slot_name}_sources"] = (sources_type, Field(default_factory=list))
+
+        # Class-level supports_references opt-in: a flat `sources: list[WikibaseReference]` per row.
+        if _truthy(_ann_dict(cls_def.annotations).get(SUPPORTS_REFERENCES_ANNOTATION)) and ref_cls is not None:
+            field_defs["sources"] = (list[ref_cls], Field(default_factory=list))
 
         model_title = _ann_dict(cls_def.annotations).get("model_title")
         _raw_enforce = _ann_dict(cls_def.annotations).get("enforce_unknown_stmt_name", False)

@@ -11,17 +11,17 @@ WIKIDATA_ID = "WIKIDATA_ID"
 
 
 class _EmptyStringsMixin(BaseModel):
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def _coerce_empty_strings(cls, data):
         if not isinstance(data, dict):
             return data
         cleaned = {}
         for k, v in data.items():
-            if v == '':
+            if v == "":
                 cleaned[k] = None
             elif isinstance(v, list):
-                cleaned[k] = [x for x in v if x != '' and x is not None]
+                cleaned[k] = [x for x in v if x != "" and x is not None]
             else:
                 cleaned[k] = v
         return cleaned
@@ -58,7 +58,10 @@ class StatementBase(_EmptyStringsMixin):
         field_metadata: FieldInfo
         subject_field = None
         for field_name, field_metadata in cls.model_fields.items():
-            field_prop_id = field_metadata.json_schema_extra.get(lookup_key)
+            extra = field_metadata.json_schema_extra
+            if not isinstance(extra, dict):
+                continue
+            field_prop_id = extra.get(lookup_key)
             if field_prop_id is not None:
                 id_parts = field_prop_id.split("/")
                 if len(id_parts) > 2 and id_parts[-2] == "statement":
@@ -79,7 +82,10 @@ class StatementBase(_EmptyStringsMixin):
         field_metadata: FieldInfo
         qualifier_fields: list[str] = []
         for field_name, field_metadata in cls.model_fields.items():
-            field_prop_id = field_metadata.json_schema_extra.get(lookup_key)
+            extra = field_metadata.json_schema_extra
+            if not isinstance(extra, dict):
+                continue
+            field_prop_id = extra.get(lookup_key)
             if field_prop_id is not None:
                 id_parts = field_prop_id.split("/")
                 if len(id_parts) > 2 and id_parts[-2] == "qualifier":
@@ -133,6 +139,33 @@ class ExtractedStatement(StatementBase):
 
 
 ItemStatementSubjectType = Literal["somevalue", "novalue"] | constr(pattern=r"^Q\d+$")
+
+
+class WikibaseReferenceBase(_EmptyStringsMixin):
+    """
+    One Wikibase statement-level reference block: a group of property/value snaks
+    documenting the provenance of a statement.
+    """
+
+    @classmethod
+    def get_reference_fields(cls, lookup_key: str) -> list[str]:
+        """
+        Get fields stored inside a Wikibase reference block. A field qualifies
+        when its property URL has the path segment ``/reference/Pxx``.
+        """
+        field_name: str
+        field_metadata: FieldInfo
+        reference_fields: list[str] = []
+        for field_name, field_metadata in cls.model_fields.items():
+            extra = field_metadata.json_schema_extra
+            if not isinstance(extra, dict):
+                continue
+            field_prop_id = extra.get(lookup_key)
+            if field_prop_id is not None:
+                id_parts = field_prop_id.split("/")
+                if len(id_parts) > 2 and id_parts[-2] == "reference":
+                    reference_fields.append(field_name)
+        return reference_fields
 
 
 class Coordinate(BaseModel):

@@ -203,6 +203,25 @@ slots:
       ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P8"
       wikibase_type: url
 
+  # Wikibase statement-level reference slots (path segment: /reference/Pxx)
+  stated_in:
+    range: item_statement_subject
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/reference/P34"
+      wikibase_type: item
+
+  reference_url:
+    range: anyuri
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/reference/P66"
+      wikibase_type: url
+
+  retrieved:
+    range: string
+    annotations:
+      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/reference/P24"
+      wikibase_type: time
+
   # Statement-reference slots (range is a schema class, no Wikibase annotations)
   authors:
     range: ScholarSignature
@@ -247,6 +266,9 @@ classes:
       - paper_subjects
       - references
     slot_usage:
+      title:
+        annotations:
+          supports_references: true
       published_in:
         required: true
       full_work_available_at_url:
@@ -271,6 +293,10 @@ classes:
       - number_of_accepted_submissions
       - editors
       - volume_subjects
+    slot_usage:
+      is_proceedings_from:
+        annotations:
+          supports_references: true
 
   ScholarlyArticle:
     is_a: Paper
@@ -284,10 +310,20 @@ classes:
       full_work_available_at_url:
         required: false
 
+  WikibaseReference:
+    description: A Wikibase statement-level reference block (group of snaks documenting provenance).
+    annotations:
+      python_base: wikibase_reference
+    slots:
+      - stated_in
+      - reference_url
+      - retrieved
+
   ScholarSignature:
     annotations:
       python_base: extracted_statement
       enforce_unknown_stmt_name: true
+      supports_references: true
     slots:
       - scholar_id
       - series_ordinal
@@ -301,6 +337,7 @@ classes:
     is_a: ScholarSignature
     annotations:
       python_base: extracted_statement
+      supports_references: true
     slot_usage:
       scholar_id:
         annotations:
@@ -312,6 +349,7 @@ classes:
       python_base: extracted_statement
       model_title: Subject
       enforce_unknown_stmt_name: true
+      supports_references: true
     slots:
       - subject_id
       - object_named_as

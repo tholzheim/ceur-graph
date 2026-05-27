@@ -51,6 +51,8 @@ const messages = {
     commit_col_current: "Current",
     commit_col_new: "New Value",
     commit_stmt_heading: "Statement changes",
+    commit_sources_heading: "Reference changes",
+    commit_source_count: "{count} source(s)",
     commit_col_section: "Section",
     commit_col_action: "Action",
     commit_col_values: "Values",
@@ -80,6 +82,10 @@ const messages = {
     stmt_dialog_edit: "Edit {label}",
     stmt_save_button: "Save",
     stmt_cancel_button: "Cancel",
+    stmt_sources_section: "Sources",
+    stmt_add_source: "+ Add source",
+    stmt_remove_source: "Remove",
+    stmt_source_count: "{count} source(s) attached",
 
     field_add_item: "+ Add",
 
@@ -123,6 +129,8 @@ const messages = {
     commit_col_current: "Aktuell",
     commit_col_new: "Neuer Wert",
     commit_stmt_heading: "Aussageänderungen",
+    commit_sources_heading: "Quellenänderungen",
+    commit_source_count: "{count} Quelle(n)",
     commit_col_section: "Bereich",
     commit_col_action: "Aktion",
     commit_col_values: "Werte",
@@ -152,6 +160,10 @@ const messages = {
     stmt_dialog_edit: "{label} bearbeiten",
     stmt_save_button: "Speichern",
     stmt_cancel_button: "Abbrechen",
+    stmt_sources_section: "Quellen",
+    stmt_add_source: "+ Quelle hinzufügen",
+    stmt_remove_source: "Entfernen",
+    stmt_source_count: "{count} Quelle(n) hinterlegt",
 
     field_add_item: "+ Hinzufügen",
 

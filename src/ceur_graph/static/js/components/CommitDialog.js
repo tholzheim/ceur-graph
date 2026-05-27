@@ -24,12 +24,65 @@ export default {
       return Array.isArray(value) ? value.join(", ") : String(value);
     }
 
+    // Build a map of base-field-name → reference_fields for sources filtering / counting.
+    const referenceFieldsByName = computed(() => {
+      const m = {};
+      for (const f of props.entityConfig?.fields ?? []) {
+        if (f.supports_references) m[f.name] = f.reference_fields ?? [];
+      }
+      return m;
+    });
+
+    function sourceBlockHasValue(block, refFields) {
+      return (refFields || []).some((rf) => {
+        const v = block?.[rf.name];
+        if (Array.isArray(v)) return v.some((x) => x !== "" && x != null);
+        return v !== "" && v != null;
+      });
+    }
+
+    function filterSourcesValue(value, refFields) {
+      if (!Array.isArray(value)) return value;
+      // Multivalued: list[list[block]]; single-valued: list[block]. Detect via the first non-null element.
+      const firstNonNull = value.find((v) => v != null);
+      if (Array.isArray(firstNonNull)) {
+        return value.map((inner) =>
+          Array.isArray(inner)
+            ? inner.filter((b) => sourceBlockHasValue(b, refFields))
+            : [],
+        );
+      }
+      return value.filter((b) => sourceBlockHasValue(b, refFields));
+    }
+
+    function countNonEmptySources(value, refFields) {
+      if (!Array.isArray(value)) return 0;
+      const firstNonNull = value.find((v) => v != null);
+      if (Array.isArray(firstNonNull)) {
+        return value.reduce(
+          (sum, inner) =>
+            sum +
+            (Array.isArray(inner)
+              ? inner.filter((b) => sourceBlockHasValue(b, refFields)).length
+              : 0),
+          0,
+        );
+      }
+      return value.filter((b) => sourceBlockHasValue(b, refFields)).length;
+    }
+
     const changedFields = computed(() => {
       const fields = [];
       for (const [k, v] of Object.entries(props.pendingData)) {
-        const isEmpty = v == null || v === "" || (Array.isArray(v) && !v.length);
+        // `<X>_sources` is shown in its own section below; skip it from the value diff table.
+        if (k.endsWith("_sources")) continue;
+        const isEmpty =
+          v == null || v === "" || (Array.isArray(v) && !v.length);
         const oldVal = props.loadedData?.[k];
-        const wasEmpty = oldVal == null || oldVal === "" || (Array.isArray(oldVal) && !oldVal.length);
+        const wasEmpty =
+          oldVal == null ||
+          oldVal === "" ||
+          (Array.isArray(oldVal) && !oldVal.length);
         if (isEmpty && wasEmpty) continue;
         const newStr = isEmpty ? null : toComparableString(v);
         const oldStr = toComparableString(oldVal);
@@ -42,6 +95,27 @@ export default {
         });
       }
       return fields;
+    });
+
+    const sourceChanges = computed(() => {
+      const changes = [];
+      for (const [baseName, refFields] of Object.entries(
+        referenceFieldsByName.value,
+      )) {
+        const key = `${baseName}_sources`;
+        const cur = props.pendingData?.[key];
+        const old = props.loadedData?.[key];
+        const curStr = JSON.stringify(filterSourcesValue(cur, refFields) ?? []);
+        const oldStr = JSON.stringify(old ?? []);
+        if (curStr === oldStr) continue;
+        changes.push({
+          name: key,
+          label: baseName.replace(/_/g, " "),
+          newCount: countNonEmptySources(cur, refFields),
+          oldCount: countNonEmptySources(old, refFields),
+        });
+      }
+      return changes;
     });
 
     const statementChanges = computed(() => {
@@ -57,7 +131,10 @@ export default {
     });
 
     const hasChanges = computed(
-      () => changedFields.value.length > 0 || statementChanges.value.length > 0,
+      () =>
+        changedFields.value.length > 0 ||
+        statementChanges.value.length > 0 ||
+        sourceChanges.value.length > 0,
     );
 
     function formatOpDisplay(op) {
@@ -87,12 +164,38 @@ export default {
       try {
         const prefix = props.entityConfig.endpoint_prefix;
         const body = {};
+        const refMap = referenceFieldsByName.value;
         for (const [k, v] of Object.entries(props.pendingData)) {
-          const isEmpty = v === null || v === undefined || v === "" || (Array.isArray(v) && !v.length);
+          // `<X>_sources` companions: filter empty source blocks; only include when there's a change.
+          if (k.endsWith("_sources")) {
+            const baseName = k.slice(0, -"_sources".length);
+            const refFields = refMap[baseName];
+            if (!refFields) continue;
+            const filtered = filterSourcesValue(v, refFields);
+            const oldFiltered = filterSourcesValue(
+              props.loadedData?.[k],
+              refFields,
+            );
+            if (
+              JSON.stringify(filtered ?? []) ===
+              JSON.stringify(oldFiltered ?? [])
+            )
+              continue;
+            body[k] = filtered;
+            continue;
+          }
+          const isEmpty =
+            v === null ||
+            v === undefined ||
+            v === "" ||
+            (Array.isArray(v) && !v.length);
           if (isEmpty) {
             if (!props.isNew) {
               const oldVal = props.loadedData?.[k];
-              const wasEmpty = oldVal == null || oldVal === "" || (Array.isArray(oldVal) && !oldVal.length);
+              const wasEmpty =
+                oldVal == null ||
+                oldVal === "" ||
+                (Array.isArray(oldVal) && !oldVal.length);
               if (!wasEmpty) body[k] = null;
             }
             continue;
@@ -140,6 +243,7 @@ export default {
     return {
       changedFields,
       statementChanges,
+      sourceChanges,
       hasChanges,
       formatOpDisplay,
       opLabel,
@@ -175,6 +279,21 @@ export default {
               </tr>
             </tbody>
           </table>
+
+          <!-- Source (reference-block) changes -->
+          <template v-if="sourceChanges.length">
+            <p style="margin-top:1rem;margin-bottom:0.5rem"><strong>{{ t('commit_sources_heading') }}</strong></p>
+            <table class="diff-table">
+              <thead><tr><th>{{ t('commit_col_field') }}</th><th v-if="!isNew">{{ t('commit_col_current') }}</th><th>{{ t('commit_col_new') }}</th></tr></thead>
+              <tbody>
+                <tr v-for="sc in sourceChanges" :key="sc.name">
+                  <td>{{ sc.label }}</td>
+                  <td v-if="!isNew" style="color:var(--muted-color)">{{ t('commit_source_count', { count: sc.oldCount }) }}</td>
+                  <td><strong>{{ t('commit_source_count', { count: sc.newCount }) }}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </template>
 
           <!-- Statement changes -->
           <template v-if="statementChanges.length">
