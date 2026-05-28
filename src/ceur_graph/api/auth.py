@@ -20,6 +20,7 @@ _OAUTH_STATE_TTL_SECONDS = 600
 
 users_db: dict[str, CeurDev] = {}
 oauth_states: dict[str, float] = {}
+oauth_request_tokens: dict[str, tuple[str, float]] = {}
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=True)
 
@@ -103,3 +104,26 @@ def _gc_oauth_states() -> None:
     expired = [s for s, exp in oauth_states.items() if exp < now]
     for s in expired:
         oauth_states.pop(s, None)
+
+
+def remember_request_token(token: str, secret: str) -> None:
+    """Store an OAuth 1.0a request token's secret until the callback consumes it."""
+    _gc_request_tokens()
+    oauth_request_tokens[token] = (secret, time.time() + _OAUTH_STATE_TTL_SECONDS)
+
+
+def consume_request_token(token: str) -> str | None:
+    """Pop the secret for an OAuth 1.0a request token, or return None if missing/expired."""
+    _gc_request_tokens()
+    entry = oauth_request_tokens.pop(token, None)
+    if entry is None:
+        return None
+    secret, expiry = entry
+    return secret if expiry >= time.time() else None
+
+
+def _gc_request_tokens() -> None:
+    now = time.time()
+    expired = [t for t, (_, exp) in oauth_request_tokens.items() if exp < now]
+    for t in expired:
+        oauth_request_tokens.pop(t, None)

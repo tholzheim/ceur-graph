@@ -27,6 +27,7 @@ const messages = {
     login_username: "Username",
     login_password: "Password",
     login_submit: "Login with Wikibase",
+    login_oauth_version: "Using OAuth {version}",
 
     nav_title: "CEUR-WS Entity Editor",
     nav_logout: "Logout",
@@ -112,6 +113,7 @@ const messages = {
     login_username: "Benutzername",
     login_password: "Passwort",
     login_submit: "Mit Wikibase anmelden",
+    login_oauth_version: "Verwendet OAuth {version}",
 
     nav_title: "CEUR-WS Entitätseditor",
     nav_logout: "Abmelden",

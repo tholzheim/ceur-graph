@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import HttpUrl, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -32,9 +33,10 @@ class Settings(BaseSettings):
 
     schema_path: Path = Path(__file__).parent / "schema" / "ceur_graph.yaml"
 
+    oauth_version: Literal["1.0a", "2.0"] = "2.0"
     oauth_client_id: str | None = None
     oauth_client_secret: SecretStr | None = None
-    oauth_redirect_uri: HttpUrl | None =  None
+    oauth_redirect_uri: HttpUrl | None = None
 
     app_base_url: HttpUrl = HttpUrl("http://localhost:8000/")
     session_ttl_minutes: int = 60

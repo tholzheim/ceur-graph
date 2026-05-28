@@ -1,23 +1,38 @@
-"""OAuth 2.0 authorization-code login flow against a Wikibase instance.
+"""OAuth login flow against a Wikibase instance.
+
+Supports two OAuth versions, selected by the ``WBFORMS_OAUTH_VERSION`` setting:
+
+* ``"2.0"`` — Wikibase REST ``/oauth2/*`` authorization-code grant. Used by
+  wikibase.cloud-hosted instances such as ceur-dev.
+* ``"1.0a"`` — MediaWiki ``Special:OAuth/*`` 3-legged flow. Used by classic
+  MediaWiki deployments such as FactGrid.
 
 Exposes two endpoints:
 
-* ``GET /oauth/login`` — redirects the browser to the Wikibase
-  ``/oauth2/authorize`` endpoint.
-* ``GET /oauth/callback`` — exchanges the authorization code for an access
-  token, builds a user-bound :class:`CeurDev`, stores it in the session
-  store, and redirects the SPA with the session token in the URL fragment.
+* ``GET /oauth/login`` — starts the appropriate authorization flow.
+* ``GET /oauth/callback`` — completes the flow, builds a user-bound
+  :class:`CeurDev`, stores it in the session store, and redirects the SPA
+  with the session token in the URL fragment.
 """
 
+import asyncio
 from urllib.parse import urlencode
 
 import httpx
+import jwt
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import RedirectResponse
+from requests_oauthlib import OAuth1Session
 
-from ceur_graph.api.auth import consume_oauth_state, issue_oauth_state, register_session
+from ceur_graph.api.auth import (
+    consume_oauth_state,
+    consume_request_token,
+    issue_oauth_state,
+    register_session,
+    remember_request_token,
+)
 from ceur_graph.ceur_dev import CeurDev
-from ceur_graph.datamodel.auth import WikibaseUserOAuth2
+from ceur_graph.datamodel.auth import WikibaseOauth1, WikibaseUserOAuth2
 from ceur_graph.settings import get_settings
 
 router = APIRouter(prefix="/oauth", tags=["Authentication"])
@@ -27,14 +42,20 @@ def _rest_base() -> str:
     return get_settings().wikibase_mediawiki_rest_url.unicode_string().rstrip("/")
 
 
+def _index_php_base() -> str:
+    """MediaWiki ``index.php`` URL, derived from the configured API URL."""
+    api_url = get_settings().wikibase_mediawiki_api_url.unicode_string()
+    return api_url.rsplit("/", 1)[0] + "/index.php"
+
+
 def _require_oauth_config() -> tuple[str, str, str]:
     settings = get_settings()
     if not settings.oauth_client_id or not settings.oauth_client_secret or not settings.oauth_redirect_uri:
         raise HTTPException(
             status_code=503,
             detail=(
-                "OAuth is not configured. Set CEUR_GRAPH_OAUTH_CLIENT_ID, "
-                "CEUR_GRAPH_OAUTH_CLIENT_SECRET, and CEUR_GRAPH_OAUTH_REDIRECT_URI."
+                "OAuth is not configured. Set WBFORMS_OAUTH_CLIENT_ID, "
+                "WBFORMS_OAUTH_CLIENT_SECRET, and WBFORMS_OAUTH_REDIRECT_URI."
             ),
         )
     return (
@@ -46,7 +67,33 @@ def _require_oauth_config() -> tuple[str, str, str]:
 
 @router.get("/login")
 async def oauth_login() -> RedirectResponse:
-    """Start the OAuth 2.0 authorization-code flow."""
+    """Start the configured OAuth authorization flow."""
+    if get_settings().oauth_version == "1.0a":
+        return await _oauth1_login()
+    return await _oauth2_login()
+
+
+@router.get("/callback")
+async def oauth_callback(
+    code: str | None = Query(None),
+    state: str | None = Query(None),
+    oauth_token: str | None = Query(None),
+    oauth_verifier: str | None = Query(None),
+) -> RedirectResponse:
+    """Complete the configured OAuth flow and create a session."""
+    if get_settings().oauth_version == "1.0a":
+        if not oauth_token or not oauth_verifier:
+            raise HTTPException(status_code=400, detail="Missing oauth_token / oauth_verifier")
+        return await _oauth1_callback(oauth_token, oauth_verifier)
+    if not code or not state:
+        raise HTTPException(status_code=400, detail="Missing code / state")
+    return await _oauth2_callback(code, state)
+
+
+# --- OAuth 2.0 -------------------------------------------------------------
+
+
+async def _oauth2_login() -> RedirectResponse:
     client_id, _client_secret, redirect_uri = _require_oauth_config()
     state = issue_oauth_state()
     params = {
@@ -58,12 +105,7 @@ async def oauth_login() -> RedirectResponse:
     return RedirectResponse(url=f"{_rest_base()}/oauth2/authorize?{urlencode(params)}", status_code=302)
 
 
-@router.get("/callback")
-async def oauth_callback(
-    code: str = Query(...),
-    state: str = Query(...),
-) -> RedirectResponse:
-    """Exchange the authorization code for an access token and create a session."""
+async def _oauth2_callback(code: str, state: str) -> RedirectResponse:
     client_id, client_secret, redirect_uri = _require_oauth_config()
     if not consume_oauth_state(state):
         raise HTTPException(status_code=400, detail="Invalid or expired OAuth state")
@@ -102,6 +144,106 @@ async def oauth_callback(
         client_id=client_id,
         client_secret=client_secret,
     )
+    return _finalize_login(auth, username)
+
+
+# --- OAuth 1.0a ------------------------------------------------------------
+
+
+async def _oauth1_login() -> RedirectResponse:
+    client_id, client_secret, _redirect_uri = _require_oauth_config()
+    initiate_url = f"{_index_php_base()}?title=Special:OAuth/initiate"
+
+    def _fetch() -> dict:
+        # MediaWiki uses the callback URL registered with the consumer, so the
+        # client always passes the literal "oob" here per the OAuth/initiate spec.
+        session = OAuth1Session(client_key=client_id, client_secret=client_secret, callback_uri="oob")
+        return session.fetch_request_token(initiate_url)
+
+    try:
+        token = await asyncio.to_thread(_fetch)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"OAuth request-token fetch failed: {e}") from e
+
+    request_token = token.get("oauth_token")
+    request_secret = token.get("oauth_token_secret")
+    if not request_token or not request_secret:
+        raise HTTPException(status_code=400, detail="OAuth request-token response missing tokens")
+
+    remember_request_token(request_token, request_secret)
+    authorize_url = f"{_index_php_base()}?title=Special:OAuth/authorize&oauth_token={request_token}"
+    return RedirectResponse(url=authorize_url, status_code=302)
+
+
+async def _oauth1_callback(oauth_token: str, oauth_verifier: str) -> RedirectResponse:
+    client_id, client_secret, _redirect_uri = _require_oauth_config()
+    request_secret = consume_request_token(oauth_token)
+    if request_secret is None:
+        raise HTTPException(status_code=400, detail="Invalid or expired OAuth request token")
+
+    token_url = f"{_index_php_base()}?title=Special:OAuth/token"
+
+    def _exchange() -> dict:
+        session = OAuth1Session(
+            client_key=client_id,
+            client_secret=client_secret,
+            resource_owner_key=oauth_token,
+            resource_owner_secret=request_secret,
+            verifier=oauth_verifier,
+        )
+        return session.fetch_access_token(token_url)
+
+    try:
+        access = await asyncio.to_thread(_exchange)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"OAuth access-token exchange failed: {e}") from e
+
+    access_token = access.get("oauth_token")
+    access_secret = access.get("oauth_token_secret")
+    if not access_token or not access_secret:
+        raise HTTPException(status_code=400, detail="OAuth access-token response missing tokens")
+
+    username = await asyncio.to_thread(_oauth1_identify, client_id, client_secret, access_token, access_secret)
+
+    auth = WikibaseOauth1(
+        consumer_token=client_id,
+        consumer_secret=client_secret,
+        access_token=access_token,
+        access_secret=access_secret,
+    )
+    return _finalize_login(auth, username)
+
+
+def _oauth1_identify(client_id: str, client_secret: str, access_token: str, access_secret: str) -> str:
+    """Resolve the username via MediaWiki's ``Special:OAuth/identify`` JWS endpoint.
+
+    Best-effort: returns ``"oauth1-user"`` if the request or decode fails, mirroring
+    the 2.0 path's handling of profile-fetch errors.
+    """
+    identify_url = f"{_index_php_base()}?title=Special:OAuth/identify"
+    try:
+        session = OAuth1Session(
+            client_key=client_id,
+            client_secret=client_secret,
+            resource_owner_key=access_token,
+            resource_owner_secret=access_secret,
+        )
+        resp = session.get(identify_url, timeout=15.0)
+        if resp.status_code != 200:
+            return "oauth1-user"
+        # MediaWiki returns a JWS signed with HS256 using the consumer secret.
+        # Signature is already trusted (HTTPS to the same wiki we just authed against),
+        # so decode without verification to read the username claim.
+        claims = jwt.decode(resp.text, options={"verify_signature": False})
+        return claims.get("username") or "oauth1-user"
+    except Exception:
+        return "oauth1-user"
+
+
+# --- shared ---------------------------------------------------------------
+
+
+def _finalize_login(auth, username: str) -> RedirectResponse:
     ceur_dev = CeurDev(auth)
     # Eagerly resolve the wbi login so we fail loudly here if the token is bad,
     # rather than on the user's first edit.

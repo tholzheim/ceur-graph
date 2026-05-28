@@ -56,8 +56,9 @@ so you only need to override them when targeting a different Wikibase.
 | `CEUR_GRAPH_WIKIBASE_PROPERTY_PREFIX` | Property IRI prefix | `.../prop/direct/` |
 | `CEUR_GRAPH_WIKIBASE_MEDIAWIKI_API_URL` | MediaWiki API (`/w/api.php`) | `.../w/api.php` |
 | `CEUR_GRAPH_WIKIBASE_MEDIAWIKI_REST_URL` | MediaWiki REST API (`/w/rest.php`) | `.../w/rest.php` |
-| `CEUR_GRAPH_OAUTH_CLIENT_ID` | OAuth 2.0 consumer ID | _required for login_ |
-| `CEUR_GRAPH_OAUTH_CLIENT_SECRET` | OAuth 2.0 consumer secret | _required for login_ |
+| `CEUR_GRAPH_OAUTH_VERSION` | `"2.0"` (Wikibase REST) or `"1.0a"` (classic MediaWiki, e.g. FactGrid) | `2.0` |
+| `CEUR_GRAPH_OAUTH_CLIENT_ID` | OAuth consumer ID/token (2.0: `client_id`; 1.0a: consumer token) | _required for login_ |
+| `CEUR_GRAPH_OAUTH_CLIENT_SECRET` | OAuth consumer secret (same field, both versions) | _required for login_ |
 | `CEUR_GRAPH_OAUTH_REDIRECT_URI` | Callback URL registered with the OAuth consumer | _required for login_ |
 | `CEUR_GRAPH_APP_BASE_URL` | Public base URL of the SPA | `http://localhost:8000/` |
 | `CEUR_GRAPH_SESSION_TTL_MINUTES` | Session lifetime | `60` |
@@ -66,13 +67,23 @@ so you only need to override them when targeting a different Wikibase.
 A ready-to-edit template is provided at `.env.example` — copy it to `.env`
 and adjust the values for your deployment.
 
-Register an OAuth 2.0 consumer (confidential client, authorization-code
-grant) at `${WIKIBASE_WEBSITE}wiki/Special:OAuthConsumerRegistration/propose`
-with the callback URL set to `${CEUR_GRAPH_OAUTH_REDIRECT_URI}` (e.g.
-`http://localhost:8000/oauth/callback`). The login button in the UI
-redirects to the Wikibase login, and after consent the user is sent back
-to the SPA with a session token. The REST API additionally accepts bot
-credentials via `POST /token`, so non-interactive clients keep working.
+For `OAUTH_VERSION=2.0` (default — wikibase.cloud-hosted instances such as
+ceur-dev), register an OAuth 2.0 consumer (confidential client,
+authorization-code grant) at
+`${WIKIBASE_WEBSITE}wiki/Special:OAuthConsumerRegistration/propose` with the
+callback URL set to `${CEUR_GRAPH_OAUTH_REDIRECT_URI}`
+(e.g. `http://localhost:8000/oauth/callback`).
+
+For `OAUTH_VERSION=1.0a` (classic MediaWiki deployments such as FactGrid),
+register an OAuth 1.0a consumer at
+`${WIKIBASE_WEBSITE}wiki/Special:OAuthConsumerRegistration/propose/oauth1a`
+with the same callback URL. Use the resulting consumer token/secret as
+`CEUR_GRAPH_OAUTH_CLIENT_ID` / `CEUR_GRAPH_OAUTH_CLIENT_SECRET`.
+
+The login button in the UI redirects to the Wikibase login, and after
+consent the user is sent back to the SPA with a session token. The REST
+API additionally accepts bot credentials via `POST /token`, so
+non-interactive clients keep working.
 
 ## Docker Support
 

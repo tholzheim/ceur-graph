@@ -56,9 +56,19 @@ const App = {
       username: usernameFromToken(initialToken),
       schema: null,
       schemaError: null,
+      config: null,
+      configError: null,
     });
 
     const isLoggedIn = computed(() => !!state.token);
+
+    async function loadConfig() {
+      try {
+        state.config = await apiFetch("/api/config");
+      } catch (e) {
+        state.configError = e.message;
+      }
+    }
 
     async function loadSchema() {
       if (!isLoggedIn.value) return;
@@ -83,12 +93,16 @@ const App = {
       state.schemaError = null;
     }
 
+    loadConfig();
     loadSchema();
 
     return { state, isLoggedIn, onLogin, onLogout, t };
   },
   template: `
-    <login-form v-if="!isLoggedIn" @login="onLogin" />
+    <div v-if="!state.config && !state.configError" style="padding:2rem;text-align:center">
+      <span class="spinner"></span>
+    </div>
+    <login-form v-else-if="!isLoggedIn" :config="state.config" @login="onLogin" />
     <div v-else-if="!state.schema && !state.schemaError" style="padding:2rem;text-align:center">
       <span class="spinner"></span> {{ t('app_loading_schema') }}
     </div>

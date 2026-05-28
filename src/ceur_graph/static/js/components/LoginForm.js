@@ -2,7 +2,10 @@ import { LANGUAGES, useI18n } from "../i18n.js";
 
 export default {
   name: "LoginForm",
-  setup() {
+  props: {
+    config: { type: Object, default: null },
+  },
+  setup(props) {
     const { ref } = Vue;
     const { t, locale, setLocale } = useI18n();
 
@@ -16,6 +19,7 @@ export default {
     }
 
     return {
+      props,
       error,
       loading,
       loginWithWikibase,
@@ -36,6 +40,9 @@ export default {
         <button type="button" :aria-busy="loading" @click="loginWithWikibase">
           {{ t('login_submit') }}
         </button>
+        <p v-if="config?.oauth_version" class="login-oauth-version">
+          {{ t('login_oauth_version', { version: config.oauth_version }) }}
+        </p>
         <div class="login-lang">
           <select :value="locale" @change="setLocale($event.target.value)">
             <option v-for="(label, code) in LANGUAGES" :key="code" :value="code">{{ label }}</option>

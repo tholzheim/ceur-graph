@@ -180,6 +180,16 @@ def _build_entity_schema(
     return {"name": entity_name, "fields": fields}
 
 
+@router.get("/api/config")
+def get_public_config() -> dict:
+    """Public configuration the SPA needs before login (OAuth version, wiki URL)."""
+    s = get_settings()
+    return {
+        "oauth_version": s.oauth_version,
+        "wikibase_website": s.wikibase_website.unicode_string(),
+    }
+
+
 @router.get("/api/schema/entities")
 def get_schema_entities() -> list[dict]:
     """Return schema metadata for all item-type entities, suitable for form generation."""
