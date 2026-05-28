@@ -8,6 +8,7 @@ from pydantic.fields import FieldInfo
 def make_field_optional(field: FieldInfo, default: Any = None) -> tuple[Any, FieldInfo]:
     new = deepcopy(field)
     new.default = default
+    new.default_factory = None
     new.annotation = field.annotation | None  # type: ignore
     return (new.annotation, new)
 
