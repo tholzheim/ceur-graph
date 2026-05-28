@@ -17,6 +17,22 @@ import { useI18n } from "./i18n.js";
 // Expose Vue composition API globally so component files can do `const { ref } = Vue`
 window.Vue = { ref, reactive, computed, watch, nextTick, onMounted };
 
+function decodeJwt(token) {
+  if (!token) return null;
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+  try {
+    const padded = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
+function usernameFromToken(token) {
+  return decodeJwt(token)?.sub ?? null;
+}
+
 const App = {
   components: { LoginForm, EntityEditor },
   setup() {
@@ -34,8 +50,10 @@ const App = {
       );
     }
 
+    const initialToken = localStorage.getItem("token");
     const state = reactive({
-      token: localStorage.getItem("token"),
+      token: initialToken,
+      username: usernameFromToken(initialToken),
       schema: null,
       schemaError: null,
     });
@@ -53,12 +71,14 @@ const App = {
 
     function onLogin(token) {
       state.token = token;
+      state.username = usernameFromToken(token);
       state.schemaError = null;
       loadSchema();
     }
 
     function onLogout() {
       state.token = null;
+      state.username = null;
       state.schema = null;
       state.schemaError = null;
     }
@@ -75,7 +95,7 @@ const App = {
     <div v-else-if="state.schemaError" class="error-banner" style="margin:2rem">
       {{ t('app_schema_error', { error: state.schemaError }) }}
     </div>
-    <entity-editor v-else :schema="state.schema" @logout="onLogout" />
+    <entity-editor v-else :schema="state.schema" :username="state.username" @logout="onLogout" />
   `,
 };
 

@@ -69,6 +69,7 @@ async def oauth_callback(
         raise HTTPException(status_code=400, detail="Invalid or expired OAuth state")
 
     token_url = f"{_rest_base()}/oauth2/access_token"
+    profile_url = f"{_rest_base()}/oauth2/resource/profile"
     async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.post(
             token_url,
@@ -80,12 +81,20 @@ async def oauth_callback(
                 "client_secret": client_secret,
             },
         )
-    if resp.status_code != 200:
-        raise HTTPException(status_code=400, detail=f"OAuth token exchange failed: {resp.text}")
-    payload = resp.json()
-    access_token = payload.get("access_token")
-    if not access_token:
-        raise HTTPException(status_code=400, detail="OAuth token exchange returned no access_token")
+        if resp.status_code != 200:
+            raise HTTPException(status_code=400, detail=f"OAuth token exchange failed: {resp.text}")
+        payload = resp.json()
+        access_token = payload.get("access_token")
+        if not access_token:
+            raise HTTPException(status_code=400, detail="OAuth token exchange returned no access_token")
+
+        username = "oauth2-user"
+        try:
+            profile_resp = await client.get(profile_url, headers={"Authorization": f"Bearer {access_token}"})
+            if profile_resp.status_code == 200:
+                username = profile_resp.json().get("username") or username
+        except httpx.HTTPError:
+            pass
 
     auth = WikibaseUserOAuth2(
         access_token=access_token,
@@ -97,7 +106,7 @@ async def oauth_callback(
     # Eagerly resolve the wbi login so we fail loudly here if the token is bad,
     # rather than on the user's first edit.
     ceur_dev.get_wbi_login()
-    session_token = register_session(ceur_dev, subject="oauth2-user")
+    session_token = register_session(ceur_dev, subject=username)
 
     app_base = get_settings().app_base_url.unicode_string().rstrip("/")
     return RedirectResponse(url=f"{app_base}/#token={session_token}", status_code=302)

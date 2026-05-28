@@ -87,6 +87,12 @@ label {
 }
 .app-bar .icon-btn {
   color: var(--muted-color);
+  width: auto;
+  height: auto;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0.25rem 0.5rem;
+  gap: 0.4rem;
 }
 
 .commit-btn {

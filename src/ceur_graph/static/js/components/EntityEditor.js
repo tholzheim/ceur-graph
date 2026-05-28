@@ -18,6 +18,7 @@ export default {
   components: { FieldInput, StatementListEditor, CommitDialog },
   props: {
     schema: { default: null },
+    username: { type: String, default: null },
   },
   emits: ["logout"],
   setup(props, { emit }) {
@@ -272,6 +273,7 @@ export default {
           </button>
           <button class="icon-btn" :title="t('nav_logout')" @click="logout">
             <icon name="logout" />
+            <span v-if="username">{{ username }}</span>
           </button>
         </div>
       </header>
