@@ -4,6 +4,13 @@ services:
     build:
       context: ./
     restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
     ports:
-      - 9005:8000
-
+      - "9574:8000"
+    # Uncomment and adjust to deploy with a custom LinkML schema. The host
+    # path on the left is bind-mounted at the container path on the right;
+    # the right side must match CEUR_GRAPH_SCHEMA_PATH in your .env.
+    # volumes:
+    #   - ./my_schema.yaml:/app/src/ceur_graph/schema/ceur_graph.yaml:ro

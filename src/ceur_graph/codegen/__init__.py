@@ -7,12 +7,11 @@ imported directly:
     from ceur_graph.codegen import Paper, PaperCreate, SubjectBase
 """
 
-from pathlib import Path
-
 from ceur_graph.codegen.fastapi_gen import generate_routers
 from ceur_graph.codegen.pydantic_gen import generate_models
+from ceur_graph.settings import get_settings
 
-_SCHEMA_PATH = Path(__file__).parent.parent / "schema" / "ceur_graph.yaml"
+_SCHEMA_PATH = get_settings().schema_path
 
 _models: dict = generate_models(_SCHEMA_PATH)
 

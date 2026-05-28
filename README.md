@@ -61,6 +61,10 @@ so you only need to override them when targeting a different Wikibase.
 | `CEUR_GRAPH_OAUTH_REDIRECT_URI` | Callback URL registered with the OAuth consumer | _required for login_ |
 | `CEUR_GRAPH_APP_BASE_URL` | Public base URL of the SPA | `http://localhost:8000/` |
 | `CEUR_GRAPH_SESSION_TTL_MINUTES` | Session lifetime | `60` |
+| `CEUR_GRAPH_SCHEMA_PATH` | LinkML schema file driving model + router codegen | bundled `ceur_graph.yaml` |
+
+A ready-to-edit template is provided at `.env.example` — copy it to `.env`
+and adjust the values for your deployment.
 
 Register an OAuth 2.0 consumer (confidential client, authorization-code
 grant) at `${WIKIBASE_WEBSITE}wiki/Special:OAuthConsumerRegistration/propose`
@@ -74,16 +78,23 @@ credentials via `POST /token`, so non-interactive clients keep working.
 
 CEUR-Graph can be easily deployed using Docker.
 
-To Start the Docker Container:
+Copy `.env.example` to `.env`, fill in the OAuth credentials (and any
+Wikibase URLs you want to override), then:
+
 ```shell
 docker compose up
 ```
 
-To Stop the Docker Container:
+To stop:
 
 ```shell
 docker compose down
 ```
+
+To deploy against a different LinkML schema, place your schema YAML next
+to `docker-compose.yml`, uncomment the `volumes:` block in
+`docker-compose.yml`, and point `CEUR_GRAPH_SCHEMA_PATH` in `.env` at
+the in-container mount path.
 
 
 ## License

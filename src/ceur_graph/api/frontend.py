@@ -13,7 +13,6 @@ from ceur_graph.datamodel.item import CEUR_DEV_ID, WIKIBASE_TYPE, WikibaseRefere
 from ceur_graph.settings import get_settings
 from ceur_graph.wbgenerator import _is_list_annotation, _wikibase_reference_class, get_statement_field_type
 
-_SCHEMA_PATH = Path(__file__).parent.parent / "schema" / "ceur_graph.yaml"
 _STATIC_DIR = Path(__file__).parent.parent / "static"
 
 router = APIRouter()
@@ -184,7 +183,7 @@ def _build_entity_schema(
 @router.get("/api/schema/entities")
 def get_schema_entities() -> list[dict]:
     """Return schema metadata for all item-type entities, suitable for form generation."""
-    raw = yaml.safe_load(_SCHEMA_PATH.read_text(encoding="utf-8"))
+    raw = yaml.safe_load(get_settings().schema_path.read_text(encoding="utf-8"))
     endpoints: list[dict] = raw.get("endpoints", [])
 
     item_endpoints = [ep for ep in endpoints if ep.get("type") == "item"]
