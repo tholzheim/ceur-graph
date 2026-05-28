@@ -4,6 +4,7 @@ from string import Template
 
 import ceur_graph.resources.queries
 from ceur_graph.datamodel.auth import WikibaseAuthorizationConfig
+from ceur_graph.settings import get_settings
 from ceur_graph.wikibase import Wikibase
 
 logger = logging.getLogger(__name__)
@@ -15,12 +16,13 @@ class CeurDev(Wikibase):
     """
 
     def __init__(self, auth_config: WikibaseAuthorizationConfig | None = None):
+        settings = get_settings()
         super().__init__(
-            sparql_endpoint="https://ceur-dev.wikibase.cloud/query/sparql",
-            website="https://ceur-dev.wikibase.cloud/",
-            item_prefix="https://ceur-dev.wikibase.cloud/entity/",
-            property_prefix="https://ceur-dev.wikibase.cloud/prop/direct/",
-            mediawiki_api_url="https://ceur-dev.wikibase.cloud/w/api.php",
+            sparql_endpoint=settings.wikibase_sparql_endpoint,
+            website=settings.wikibase_website,
+            item_prefix=settings.wikibase_item_prefix,
+            property_prefix=settings.wikibase_property_prefix,
+            mediawiki_api_url=settings.wikibase_mediawiki_api_url,
             auth_config=auth_config,
         )
 

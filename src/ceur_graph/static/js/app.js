@@ -22,6 +22,18 @@ const App = {
   setup() {
     const { t } = useI18n();
 
+    // Pick up an OAuth callback token delivered via #token=... fragment.
+    const hash = window.location.hash || "";
+    const m = hash.match(/[#&]token=([^&]+)/);
+    if (m) {
+      localStorage.setItem("token", decodeURIComponent(m[1]));
+      history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.search,
+      );
+    }
+
     const state = reactive({
       token: localStorage.getItem("token"),
       schema: null,

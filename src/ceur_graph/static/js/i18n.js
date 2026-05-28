@@ -22,11 +22,11 @@ const messages = {
     app_schema_error: "Failed to load schema: {error}",
 
     login_title: "CEUR-WS Entity Editor",
-    login_subtitle: "Sign in with your Wikibase bot credentials",
+    login_subtitle: "Sign in with your Wikibase account",
     login_invalid: "Invalid credentials",
     login_username: "Username",
     login_password: "Password",
-    login_submit: "Sign in",
+    login_submit: "Login with Wikibase",
 
     nav_title: "CEUR-WS Entity Editor",
     nav_logout: "Logout",
@@ -107,11 +107,11 @@ const messages = {
     app_schema_error: "Schema konnte nicht geladen werden: {error}",
 
     login_title: "CEUR-WS Entitätseditor",
-    login_subtitle: "Mit Wikibase-Bot-Zugangsdaten anmelden",
+    login_subtitle: "Mit Wikibase-Konto anmelden",
     login_invalid: "Ungültige Zugangsdaten",
     login_username: "Benutzername",
     login_password: "Passwort",
-    login_submit: "Anmelden",
+    login_submit: "Mit Wikibase anmelden",
 
     nav_title: "CEUR-WS Entitätseditor",
     nav_logout: "Abmelden",

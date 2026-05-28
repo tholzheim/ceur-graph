@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from ceur_graph.api import ceurws, wd_migrate
 from ceur_graph.api.auth import login_user
 from ceur_graph.api.frontend import router as frontend_router
+from ceur_graph.api.oauth import router as oauth_router
 from ceur_graph.codegen import get_routers
 
 
@@ -31,6 +32,7 @@ def _setup_logging() -> None:
         logging.getLogger(noisy).setLevel(logging.WARNING)
     logging.basicConfig(level=level)
 
+
 _setup_logging()
 
 app = FastAPI()
@@ -43,6 +45,7 @@ for router in get_routers():
 
 app.include_router(wd_migrate.router)
 app.include_router(ceurws.router)
+app.include_router(oauth_router)
 
 # Frontend router last so it doesn't shadow API routes
 app.include_router(frontend_router)

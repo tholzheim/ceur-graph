@@ -239,6 +239,18 @@ class Wikibase(BaseModel):
                     password=self.auth_config.password,
                     mediawiki_api_url=self.mediawiki_api_url.unicode_string(),
                 )
+            case WikibaseLoginTypes.USER_OAUTH2:
+                from ceur_graph.api.oauth_login import UserOAuth2
+                from ceur_graph.settings import get_settings
+
+                return UserOAuth2(
+                    access_token=self.auth_config.access_token,
+                    refresh_token=self.auth_config.refresh_token,
+                    client_id=self.auth_config.client_id,
+                    client_secret=self.auth_config.client_secret,
+                    mediawiki_api_url=self.mediawiki_api_url.unicode_string(),
+                    mediawiki_rest_url=get_settings().wikibase_mediawiki_rest_url.unicode_string().rstrip("/"),
+                )
             case _:
                 return None
 

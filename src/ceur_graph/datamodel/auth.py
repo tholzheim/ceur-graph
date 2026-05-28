@@ -12,6 +12,7 @@ class WikibaseLoginTypes(Enum):
     USER = "user"
     OAUTH1 = "oauth1"
     OAUTH2 = "oauth2"
+    USER_OAUTH2 = "user_oauth2"
     NONE = "none"
 
 
@@ -64,6 +65,20 @@ class WikibaseUserAuth(WikibaseAuthorizationConfig):
     auth_type: WikibaseLoginTypes = WikibaseLoginTypes.USER
     user: str
     password: str
+
+
+class WikibaseUserOAuth2(WikibaseAuthorizationConfig):
+    """
+    Wikibase OAuth 2.0 user-delegated access (authorization code grant).
+    The access token is obtained on behalf of a logged-in user — edits made
+    with it are attributed to that user.
+    """
+
+    auth_type: WikibaseLoginTypes = WikibaseLoginTypes.USER_OAUTH2
+    access_token: str
+    refresh_token: str | None = None
+    client_id: str | None = None
+    client_secret: str | None = None
 
 
 class Authorization(BaseModel):

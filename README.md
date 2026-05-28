@@ -41,6 +41,35 @@ biome check --write src/ceur_graph/static/js/
 ```
 
 
+## Configuration
+
+The Wikibase URLs and OAuth client credentials are read from environment
+variables (or a `.env` file) at startup. All variables are prefixed with
+`CEUR_GRAPH_`. The Wikibase URLs default to the public CEUR-dev instance,
+so you only need to override them when targeting a different Wikibase.
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `CEUR_GRAPH_WIKIBASE_WEBSITE` | Wikibase root URL | `https://ceur-dev.wikibase.cloud/` |
+| `CEUR_GRAPH_WIKIBASE_SPARQL_ENDPOINT` | SPARQL endpoint | `.../query/sparql` |
+| `CEUR_GRAPH_WIKIBASE_ITEM_PREFIX` | Item IRI prefix | `.../entity/` |
+| `CEUR_GRAPH_WIKIBASE_PROPERTY_PREFIX` | Property IRI prefix | `.../prop/direct/` |
+| `CEUR_GRAPH_WIKIBASE_MEDIAWIKI_API_URL` | MediaWiki API (`/w/api.php`) | `.../w/api.php` |
+| `CEUR_GRAPH_WIKIBASE_MEDIAWIKI_REST_URL` | MediaWiki REST API (`/w/rest.php`) | `.../w/rest.php` |
+| `CEUR_GRAPH_OAUTH_CLIENT_ID` | OAuth 2.0 consumer ID | _required for login_ |
+| `CEUR_GRAPH_OAUTH_CLIENT_SECRET` | OAuth 2.0 consumer secret | _required for login_ |
+| `CEUR_GRAPH_OAUTH_REDIRECT_URI` | Callback URL registered with the OAuth consumer | _required for login_ |
+| `CEUR_GRAPH_APP_BASE_URL` | Public base URL of the SPA | `http://localhost:8000/` |
+| `CEUR_GRAPH_SESSION_TTL_MINUTES` | Session lifetime | `60` |
+
+Register an OAuth 2.0 consumer (confidential client, authorization-code
+grant) at `${WIKIBASE_WEBSITE}wiki/Special:OAuthConsumerRegistration/propose`
+with the callback URL set to `${CEUR_GRAPH_OAUTH_REDIRECT_URI}` (e.g.
+`http://localhost:8000/oauth/callback`). The login button in the UI
+redirects to the Wikibase login, and after consent the user is sent back
+to the SPA with a session token. The REST API additionally accepts bot
+credentials via `POST /token`, so non-interactive clients keep working.
+
 ## Docker Support
 
 CEUR-Graph can be easily deployed using Docker.

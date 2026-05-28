@@ -148,6 +148,7 @@ def _statement_router(ep: dict, models: dict) -> APIRouter:
     )
 
     if has_get_by_id:
+
         def _get_by_id(**kw):
             return handle_get_statement_by_id(
                 wikibase=CeurDev(),
@@ -194,6 +195,7 @@ def _statement_router(ep: dict, models: dict) -> APIRouter:
     )
 
     if has_delete_by_object:
+
         def _delete_by_object(**kw):
             return handle_statement_deletion_by_object(
                 wikibase=kw["ceur_dev"],

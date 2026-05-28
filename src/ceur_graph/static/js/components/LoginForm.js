@@ -2,45 +2,23 @@ import { LANGUAGES, useI18n } from "../i18n.js";
 
 export default {
   name: "LoginForm",
-  emits: ["login"],
-  setup(_, { emit }) {
+  setup() {
     const { ref } = Vue;
     const { t, locale, setLocale } = useI18n();
 
-    const username = ref("");
-    const password = ref("");
     const error = ref("");
     const loading = ref(false);
 
-    async function submit() {
+    function loginWithWikibase() {
       error.value = "";
       loading.value = true;
-      try {
-        const body = new URLSearchParams({
-          username: username.value,
-          password: password.value,
-        });
-        const resp = await fetch("/token", { method: "POST", body });
-        if (!resp.ok) {
-          error.value = t("login_invalid");
-          return;
-        }
-        const data = await resp.json();
-        localStorage.setItem("token", data.access_token);
-        emit("login", data.access_token);
-      } catch (e) {
-        error.value = e.message;
-      } finally {
-        loading.value = false;
-      }
+      window.location.href = "/oauth/login";
     }
 
     return {
-      username,
-      password,
       error,
       loading,
-      submit,
+      loginWithWikibase,
       t,
       locale,
       setLocale,
@@ -55,11 +33,9 @@ export default {
           <p>{{ t('login_subtitle') }}</p>
         </hgroup>
         <div v-if="error" class="error-banner">{{ error }}</div>
-        <form @submit.prevent="submit">
-          <label>{{ t('login_username') }} <input v-model="username" type="text" autocomplete="username" required /></label>
-          <label>{{ t('login_password') }} <input v-model="password" type="password" autocomplete="current-password" required /></label>
-          <button type="submit" :aria-busy="loading">{{ t('login_submit') }}</button>
-        </form>
+        <button type="button" :aria-busy="loading" @click="loginWithWikibase">
+          {{ t('login_submit') }}
+        </button>
         <div class="login-lang">
           <select :value="locale" @change="setLocale($event.target.value)">
             <option v-for="(label, code) in LANGUAGES" :key="code" :value="code">{{ label }}</option>

@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 
 from ceur_graph.codegen import get_models
 from ceur_graph.datamodel.item import CEUR_DEV_ID, WIKIBASE_TYPE, WikibaseReferenceBase
+from ceur_graph.settings import get_settings
 from ceur_graph.wbgenerator import _is_list_annotation, _wikibase_reference_class, get_statement_field_type
 
 _SCHEMA_PATH = Path(__file__).parent.parent / "schema" / "ceur_graph.yaml"
@@ -208,7 +209,7 @@ async def entity_search(q: str = Query(..., min_length=1), limit: int = 10) -> l
     """Proxy to wbsearchentities to avoid CORS issues from the browser."""
     async with httpx.AsyncClient() as client:
         resp = await client.get(
-            "https://ceur-dev.wikibase.cloud/w/api.php",
+            get_settings().wikibase_mediawiki_api_url.unicode_string(),
             params={
                 "action": "wbsearchentities",
                 "search": q,
@@ -235,7 +236,7 @@ async def entity_label(qid: str = Query(...), language: str = "en") -> dict:
     """Resolve a single QID to its label and description via wbgetentities."""
     async with httpx.AsyncClient() as client:
         resp = await client.get(
-            "https://ceur-dev.wikibase.cloud/w/api.php",
+            get_settings().wikibase_mediawiki_api_url.unicode_string(),
             params={
                 "action": "wbgetentities",
                 "ids": qid,
