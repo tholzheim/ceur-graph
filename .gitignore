@@ -12,3 +12,6 @@ wheels/
 
 # IDE
 .idea/
+
+# js
+node_modules/
