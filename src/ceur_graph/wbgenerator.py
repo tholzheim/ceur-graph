@@ -45,8 +45,13 @@ def get_statement_field_type(annotation) -> type[StatementBase] | None:
     return None
 
 
-def _get_schema_extra(field_metadata: FieldInfo) -> dict:
-    """Return json_schema_extra as a plain dict, or {} if absent."""
+def _get_schema_extra(field_metadata: FieldInfo) -> Any:
+    """Return json_schema_extra (a loosely-typed mapping), or {} if absent.
+
+    Returns ``Any`` because the contained property ids / wikibase types are
+    schema-driven strings consumed by ``str``-typed helpers; the values are
+    guaranteed present in the branches that use them.
+    """
     extra = field_metadata.json_schema_extra
     return extra if isinstance(extra, dict) else {}
 
@@ -372,7 +377,7 @@ def get_model_from_item(item: ItemEntity, model: type[BaseModel]) -> BaseModel:
     default_language = "en"
     field_name: str
     field_metadata: FieldInfo
-    record = {}
+    record: dict[str, Any] = {}
     for field_name, field_metadata in model.model_fields.items():
         # Statement-reference field (list[ScholarSignature], etc.)
         stmt_type = get_statement_field_type(field_metadata.annotation)
@@ -603,7 +608,7 @@ def _build_reference_block(ref_model: WikibaseReferenceBase) -> WBIReference | N
         if value is None:
             continue
         meta = type(ref_model).model_fields[ref_field]
-        extra = meta.json_schema_extra if isinstance(meta.json_schema_extra, dict) else {}
+        extra = _get_schema_extra(meta)
         snak_claim = get_claim(
             prop_id=extra.get(CEUR_DEV_ID),
             datatype=extra.get(WIKIBASE_TYPE),

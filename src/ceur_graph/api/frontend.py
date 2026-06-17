@@ -7,9 +7,10 @@ import httpx
 import yaml
 from fastapi import APIRouter, Query
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 
 from ceur_graph.codegen import get_models
-from ceur_graph.datamodel.item import CEUR_DEV_ID, WIKIBASE_TYPE, WikibaseReferenceBase
+from ceur_graph.datamodel.item import CEUR_DEV_ID, WIKIBASE_TYPE, StatementBase, WikibaseReferenceBase
 from ceur_graph.settings import get_settings
 from ceur_graph.wbgenerator import _is_list_annotation, _wikibase_reference_class, get_statement_field_type
 
@@ -42,7 +43,7 @@ def _label(name: str) -> str:
     return name.replace("_", " ").title()
 
 
-def _build_statement_fields(stmt_cls: type) -> list[dict]:
+def _build_statement_fields(stmt_cls: type[StatementBase]) -> list[dict]:
     subject_field_name = stmt_cls.get_statement_subject(CEUR_DEV_ID)
     fields = []
     for fname, finfo in stmt_cls.model_fields.items():
@@ -67,7 +68,7 @@ def _build_statement_fields(stmt_cls: type) -> list[dict]:
     return fields
 
 
-def _reference_class_for(stmt_cls: type) -> type[WikibaseReferenceBase] | None:
+def _reference_class_for(stmt_cls: type[StatementBase]) -> type[WikibaseReferenceBase] | None:
     """Return the WikibaseReference subclass attached via the `sources` field, or None."""
     sources_field = stmt_cls.model_fields.get("sources")
     if sources_field is None:
@@ -97,7 +98,7 @@ def _build_reference_fields(ref_cls: type[WikibaseReferenceBase]) -> list[dict]:
 
 def _build_entity_schema(
     entity_name: str,
-    model_cls: type,
+    model_cls: type[BaseModel],
     all_models: dict,
     endpoints: list[dict],
 ) -> dict:

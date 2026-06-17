@@ -45,7 +45,7 @@ def _make_handler(params: list[tuple], fn: Any) -> Any:
     def handler(**kwargs):
         return fn(**kwargs)
 
-    handler.__signature__ = Signature(sig_params)
+    handler.__signature__ = Signature(sig_params)  # type: ignore[attr-defined]
     handler.__name__ = getattr(fn, "__name__", "handler")
     return handler
 
@@ -114,7 +114,7 @@ def _statement_router(ep: dict, models: dict) -> APIRouter:
     has_delete_by_object: bool = ep.get("has_delete_by_object", False)
     has_get_by_id: bool = ep.get("has_get_by_id", False)
 
-    ReadModel = models[model_name]
+    ReadModel: Any = models[model_name]
     CreateModel = models[f"{model_name}Create"]
     UpdateModel = models[f"{model_name}Update"]
     BaseModel = models[f"{model_name}Base"]

@@ -57,8 +57,9 @@ def _ann_dict(annotations) -> dict[str, str]:
         return {}
     result: dict[str, str] = {}
     try:
+        pairs: list[tuple[Any, Any]]
         if isinstance(annotations, dict):
-            pairs = annotations.items()
+            pairs = list(annotations.items())
         else:
             pairs = [(k, annotations[k]) for k in annotations]
         for k, v in pairs:
@@ -119,7 +120,7 @@ def _build_field_def(
 
     # Check if range refers to a generated schema class (statement-reference field)
     if range_name in models and range_name not in RANGE_TO_PYTHON:
-        stmt_cls = models[range_name]
+        stmt_cls: Any = models[range_name]
         if slot.multivalued:
             return list[stmt_cls], Field(default_factory=list)
         else:
@@ -222,7 +223,7 @@ def generate_models(schema_path: Path) -> dict[str, type]:
         slots_to_gen = own_slots_ordered + slot_usage_only
 
         field_defs: dict[str, tuple[Any, Any]] = {}
-        ref_cls = models.get(WIKIBASE_REFERENCE_CLASS_NAME)
+        ref_cls: Any = models.get(WIKIBASE_REFERENCE_CLASS_NAME)
         for slot_name in slots_to_gen:
             induced = view.induced_slot(slot_name, class_name)
             anns = _slot_annotations(view, slot_name, class_name, induced)
