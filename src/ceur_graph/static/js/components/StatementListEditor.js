@@ -171,7 +171,9 @@ export default {
     function openNewInline() {
       editingKey.value = "new";
       editingRow.value = null;
-      Object.keys(formData).forEach((k) => delete formData[k]);
+      Object.keys(formData).forEach((k) => {
+        delete formData[k];
+      });
       props.field.statement_fields.forEach((f) => {
         formData[f.name] = f.field_type === "list" ? [] : "";
       });
@@ -199,7 +201,9 @@ export default {
           : (pendingEditMap.value[row.statement_id] ?? row);
       editingKey.value = rowKey(editingRow.value) ?? rowKey(row);
 
-      Object.keys(formData).forEach((k) => delete formData[k]);
+      Object.keys(formData).forEach((k) => {
+        delete formData[k];
+      });
       props.field.statement_fields.forEach((f) => {
         formData[f.name] = src[f.name] ?? (f.field_type === "list" ? [] : "");
       });

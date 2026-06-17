@@ -4,7 +4,7 @@ export async function apiFetch(path, options = {}) {
     "Content-Type": "application/json",
     ...(options.headers || {}),
   };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   const resp = await fetch(path, { ...options, headers });
 

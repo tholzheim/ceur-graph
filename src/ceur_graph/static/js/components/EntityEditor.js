@@ -102,10 +102,12 @@ export default {
 
     function resetForm() {
       loadedData.value = null;
-      Object.keys(pendingData).forEach((k) => delete pendingData[k]);
-      Object.keys(pendingStatements).forEach(
-        (k) => delete pendingStatements[k],
-      );
+      Object.keys(pendingData).forEach((k) => {
+        delete pendingData[k];
+      });
+      Object.keys(pendingStatements).forEach((k) => {
+        delete pendingStatements[k];
+      });
       clearSignal.value++;
       if (selectedEntity.value) {
         selectedEntity.value.fields.forEach((f) => {
@@ -145,11 +147,13 @@ export default {
           selectedEntityName.value.toLowerCase(),
           qidInput.value.trim(),
         );
-        Object.keys(pendingStatements).forEach(
-          (k) => delete pendingStatements[k],
-        );
+        Object.keys(pendingStatements).forEach((k) => {
+          delete pendingStatements[k];
+        });
         clearSignal.value++;
-        Object.keys(pendingData).forEach((k) => delete pendingData[k]);
+        Object.keys(pendingData).forEach((k) => {
+          delete pendingData[k];
+        });
         selectedEntity.value.fields.forEach((f) => {
           if (f.field_type === "statement_list") return;
           pendingData[f.name] =
@@ -193,9 +197,9 @@ export default {
         );
       }
       isNew.value = false;
-      Object.keys(pendingStatements).forEach(
-        (k) => delete pendingStatements[k],
-      );
+      Object.keys(pendingStatements).forEach((k) => {
+        delete pendingStatements[k];
+      });
       clearSignal.value++;
       success.value = t("entity_saved", { qid: entity?.qid ?? "(unknown)" });
       setTimeout(() => {
