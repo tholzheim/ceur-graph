@@ -783,8 +783,10 @@ def update_qualified_statement_from_model(item: ItemEntity, statement_id: str, m
         qualifier_metadata = model.model_fields.get(model_field)
         qualifier_prop_id = qualifier_metadata.json_schema_extra.get(CEUR_DEV_ID)
         qualifier_prop_nr = Wikibase.get_entity_id(qualifier_prop_id)
-        # remove existing values
-        for qualifier_snak in claim.qualifiers.get(qualifier_prop_nr):
+        # remove existing values (iterate a copy: Qualifiers.remove mutates the
+        # internal list returned by .get(), same WBI bug worked around in
+        # _remove_property_claims above)
+        for qualifier_snak in list(claim.qualifiers.get(qualifier_prop_nr)):
             claim.qualifiers.remove(qualifier_snak)
     add_qualifier_values_to_statement(claim, model)
     if "sources" in model.model_fields_set:
