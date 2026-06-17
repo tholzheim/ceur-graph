@@ -13,6 +13,7 @@ from ceur_graph.datamodel.item import (
     StatementBase,
 )
 from ceur_graph.wbgenerator import (
+    StatementNotFoundError,
     add_statement_from_model,
     create_item_from_model,
     delete_property_statement_by_id,
@@ -128,6 +129,8 @@ def handle_statement_deletion_by_id(wikibase: Wikibase, item_id: str, statement_
             wikibase.write_item(item, summary=f"Removes {get_model_label(model)}")
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Statement not found")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
@@ -155,6 +158,8 @@ def handle_statement_deletion_by_object(
             wikibase.write_item(item, summary=f"Removes {get_model_label(model)}")
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Statement not found")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
@@ -211,6 +216,11 @@ def handle_statement_update(
         updated_item = wikibase.write_item(item, summary=f"Update {get_model_label(target_model)}")
         updated_author_signature = get_item_statement_by_id(updated_item, statement_id, target_model)
         return updated_author_signature
+    except HTTPException:
+        raise
+    except StatementNotFoundError as e:
+        logger.warning(f"Statement update failed: item_id={item_id} statement_id={statement_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
@@ -251,6 +261,8 @@ def handle_get_statement_by_id(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Statement not found")
         else:
             return model
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e

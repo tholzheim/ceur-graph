@@ -10,6 +10,7 @@ from wikibaseintegrator.entities import ItemEntity
 
 from ceur_graph.codegen import get_models
 from ceur_graph.wbgenerator import (
+    StatementNotFoundError,
     create_qualified_statement_from_model,
     get_model_from_qualified_statement,
     update_qualified_statement_from_model,
@@ -60,6 +61,17 @@ class TestQualifierUpdate(unittest.TestCase):
         item, claim = self._item_with_signature(scholar_id="Q42", series_ordinal=1)
         back = self._apply_update(item, claim, {"scholar_id": "Q42", "series_ordinal": ""})
         self.assertIsNone(back.series_ordinal)
+
+    def test_unknown_statement_id_raises_diagnostic_error(self):
+        """An unknown statement_id raises StatementNotFoundError listing the available ids."""
+        item, claim = self._item_with_signature(scholar_id="Q42", affiliation=["Q1"])
+        upd = self.Update.model_validate({"scholar_id": "Q42", "affiliation": ["Q9"]})
+        with self.assertRaises(StatementNotFoundError) as ctx:
+            update_qualified_statement_from_model(item, "Q1$does-not-exist", upd)
+        err = ctx.exception
+        self.assertEqual(err.statement_id, "Q1$does-not-exist")
+        self.assertIn(claim.id, err.available_ids)
+        self.assertIn(claim.id, str(err))
 
 
 if __name__ == "__main__":

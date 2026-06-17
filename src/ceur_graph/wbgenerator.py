@@ -728,6 +728,19 @@ def delete_statement_by_matching_model(item: ItemEntity, model: StatementBase) -
     return False
 
 
+class StatementNotFoundError(LookupError):
+    """Raised when a statement_id does not match any claim on the target item.
+
+    Carries the offending id and the ids that *were* present so the API layer can
+    surface an actionable 404 (rather than an opaque 500).
+    """
+
+    def __init__(self, statement_id: str, available_ids: list[str | None]):
+        self.statement_id = statement_id
+        self.available_ids = list(available_ids)
+        super().__init__(f"Statement {statement_id!r} not found on item; available statement ids: {self.available_ids}")
+
+
 def get_calim_by_statement_id(item: ItemEntity, statement_id: str) -> Claim | None:
     """
     Get claim from given statement id
@@ -751,7 +764,7 @@ def update_qualified_statement_from_model(item: ItemEntity, statement_id: str, m
     """
     claim = get_calim_by_statement_id(item, statement_id)
     if claim is None:
-        raise ValueError("Statement not found")
+        raise StatementNotFoundError(statement_id, [c.id for c in item.claims])
     statement_object_field = model.get_statement_subject(CEUR_DEV_ID)
     statement_object_value = getattr(model, statement_object_field)
     statement_metadata = model.model_fields.get(statement_object_field)
