@@ -77,6 +77,18 @@ def _remove_property_claims(item: ItemEntity, prop_nr: str) -> None:
         del internal[prop_nr]
 
 
+def _statement_ids_equal(a: str | None, b: str | None) -> bool:
+    """Compare two statement GUIDs case-insensitively.
+
+    Wikibase treats statement GUIDs case-insensitively and different API surfaces present them
+    in different case (the REST API upper-normalizes them; see Wikimedia T354262). New, unwritten
+    claims have ``id is None`` and never match.
+    """
+    if a is None or b is None:
+        return False
+    return a.lower() == b.lower()
+
+
 def _is_list_annotation(annotation) -> bool:
     """Return True if annotation is list[T] or list[T] | None (Optional list)."""
     origin = get_origin(annotation)
@@ -548,7 +560,7 @@ def get_item_statement_by_id(item: ItemEntity, statement_id: str, target_model: 
     """
     statements = get_models_from_qualified_statement(item, target_model)
     for statement in statements:
-        if statement.statement_id == statement_id:
+        if _statement_ids_equal(statement.statement_id, statement_id):
             return statement
     return None
 
@@ -709,7 +721,7 @@ def delete_property_statement_by_id(item: ItemEntity, statement_id: str, model_t
     subject_prop_id = model_type.model_fields.get(subject_field).json_schema_extra.get(CEUR_DEV_ID)
     subject_prop_nr = Wikibase.get_entity_id(subject_prop_id)
     for claim in item.claims.get(subject_prop_nr):
-        if claim.id == statement_id:
+        if _statement_ids_equal(claim.id, statement_id):
             claim.remove()
             return True
     return False
@@ -754,7 +766,7 @@ def get_calim_by_statement_id(item: ItemEntity, statement_id: str) -> Claim | No
     :return:
     """
     for claim in item.claims:
-        if claim.id == statement_id:
+        if _statement_ids_equal(claim.id, statement_id):
             return claim
     return None
 

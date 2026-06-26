@@ -209,7 +209,19 @@ def handle_statement_update(
     try:
         logger.info(f"Updating statement {statement_id} ({model_obj})")
         item: ItemEntity = wikibase.get_item(item_id)
-        update_qualified_statement_from_model(item=item, statement_id=statement_id, model=model_obj)
+        try:
+            update_qualified_statement_from_model(item=item, statement_id=statement_id, model=model_obj)
+        except StatementNotFoundError:
+            # The client-held statement id can be stale (e.g. a different/replicated revision was
+            # read when the list was loaded). Re-resolve the target statement by its stable identity
+            # (subject / object_named_as via the model __eq__) and retry once before giving up.
+            existing = get_item_statement_by_model(item, model_obj, target_model)
+            resolved_id = getattr(existing, "statement_id", None) if existing is not None else None
+            if not resolved_id:
+                raise
+            logger.warning(f"statement_id {statement_id} stale; re-resolved to {resolved_id}")
+            statement_id = resolved_id
+            update_qualified_statement_from_model(item=item, statement_id=statement_id, model=model_obj)
         # Check if modification would invalidate the model → error is raised if invalid
         get_item_statement_by_id(item, statement_id, target_model)
         # modification is valid → push changes to wikibase

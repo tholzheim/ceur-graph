@@ -72,10 +72,10 @@ def _item_router(ep: dict, models: dict) -> APIRouter:
     )
 
     def _get(**kw):
-        return handle_get_item_by_id(wikibase=CeurDev(), item_id=kw[id_param], target_model=ReadModel)
+        return handle_get_item_by_id(wikibase=kw["ceur_dev"], item_id=kw[id_param], target_model=ReadModel)
 
     router.get(f"/{{{id_param}}}", response_model=ReadModel, status_code=status.HTTP_200_OK)(
-        _make_handler([(id_param, str)], _get)
+        _make_handler([(id_param, str), ("ceur_dev", _AUTH)], _get)
     )
 
     def _update(**kw):
@@ -126,10 +126,10 @@ def _statement_router(ep: dict, models: dict) -> APIRouter:
     )
 
     def _get_all(**kw):
-        return handle_get_all_statements(wikibase=CeurDev(), item_id=kw[parent_param], target_model=ReadModel)
+        return handle_get_all_statements(wikibase=kw["ceur_dev"], item_id=kw[parent_param], target_model=ReadModel)
 
     router.get("", response_model=list[ReadModel], status_code=status.HTTP_200_OK)(
-        _make_handler([(parent_param, _QID)], _get_all)
+        _make_handler([(parent_param, _QID), ("ceur_dev", _AUTH)], _get_all)
     )
 
     def _create(**kw):
@@ -151,7 +151,7 @@ def _statement_router(ep: dict, models: dict) -> APIRouter:
 
         def _get_by_id(**kw):
             return handle_get_statement_by_id(
-                wikibase=CeurDev(),
+                wikibase=kw["ceur_dev"],
                 item_id=kw[parent_param],
                 statement_id=kw["statement_id"],
                 target_model=ReadModel,

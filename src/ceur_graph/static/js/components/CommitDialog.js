@@ -211,7 +211,10 @@ export default {
         let result;
         if (props.isNew) {
           result = await apiPost(`${prefix}/`, body);
-        } else {
+        } else if (changedFields.value.length || sourceChanges.value.length) {
+          // Only rewrite the item when item-level fields/sources actually changed. A
+          // statement-only edit must not trigger a full item write (it is wasteful and can make
+          // the just-loaded statement ids stale on a replicated backend).
           const qid = props.loadedData?.qid;
           result = await apiPut(`${prefix}/${qid}`, body);
         }
