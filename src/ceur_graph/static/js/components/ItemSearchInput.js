@@ -33,10 +33,10 @@ export default {
       if (selectedQid.value === qid) selectedLabel.value = label;
     }
 
-    if (props.modelValue && /^Q\d+$/i.test(props.modelValue)) {
-      initFromQid(props.modelValue);
-    }
-
+    // Initialise (and re-initialise) the chip/label from the current value via an immediate watch.
+    // Doing this as an effect — rather than a one-time read at creation — makes the displayed value
+    // and resolved label independent of mount timing: when the inline editor mounts with its
+    // model-value already set, the chip + label populate on the first open.
     watch(
       () => props.modelValue,
       (v) => {
@@ -51,6 +51,7 @@ export default {
           suggestions.value = [];
         }
       },
+      { immediate: true },
     );
 
     // --- Mode transitions ---

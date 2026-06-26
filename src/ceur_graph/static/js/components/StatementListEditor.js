@@ -169,8 +169,8 @@ export default {
     }
 
     function openNewInline() {
-      editingKey.value = "new";
-      editingRow.value = null;
+      // Populate form state BEFORE flipping editingKey: editingKey drives the v-if that mounts the
+      // editor (and its ItemSearchInput children), which read formData at creation time.
       Object.keys(formData).forEach((k) => {
         delete formData[k];
       });
@@ -181,6 +181,8 @@ export default {
       snakType.value = "unknown_value";
       if (subjectField.value) formData[subjectField.value.name] = "somevalue";
       editorError.value = "";
+      editingRow.value = null;
+      editingKey.value = "new";
       focusFirstInput();
     }
 
@@ -195,12 +197,14 @@ export default {
         row._id !== undefined
           ? row.data
           : (pendingEditMap.value[row.statement_id]?.data ?? row);
-      editingRow.value =
+      const nextRow =
         row._id !== undefined
           ? row
           : (pendingEditMap.value[row.statement_id] ?? row);
-      editingKey.value = rowKey(editingRow.value) ?? rowKey(row);
 
+      // Populate form state BEFORE flipping editingKey: editingKey drives the v-if that mounts the
+      // editor (and its ItemSearchInput children), which read formData at creation time. Mounting
+      // first would leave item fields/labels empty until a later prop change (the "second click" bug).
       Object.keys(formData).forEach((k) => {
         delete formData[k];
       });
@@ -212,6 +216,8 @@ export default {
         snakType.value = snakTypeFromValue(src[subjectField.value.name] ?? "");
       }
       editorError.value = "";
+      editingRow.value = nextRow;
+      editingKey.value = rowKey(nextRow) ?? rowKey(row);
       focusFirstInput();
     }
 
