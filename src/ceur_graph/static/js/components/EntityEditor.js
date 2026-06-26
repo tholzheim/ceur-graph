@@ -133,6 +133,30 @@ export default {
       }
     });
 
+    // Re-apply a freshly loaded/saved entity to the form: set it as the loaded baseline, clear and
+    // repopulate the simple-field pendingData from it, and bump clearSignal so each
+    // StatementListEditor reloads its rows from the server. Shared by load() and onSaved() so the
+    // whole form (fields, sources, statement tables) always reflects the persisted item.
+    function applyEntity(data) {
+      loadedData.value = data;
+      Object.keys(pendingStatements).forEach((k) => {
+        delete pendingStatements[k];
+      });
+      clearSignal.value++;
+      Object.keys(pendingData).forEach((k) => {
+        delete pendingData[k];
+      });
+      if (!data) return;
+      (selectedEntity.value?.fields ?? []).forEach((f) => {
+        if (f.field_type === "statement_list") return;
+        pendingData[f.name] =
+          data[f.name] ?? (f.field_type === "list" ? [] : "");
+        if (f.supports_references) {
+          pendingData[`${f.name}_sources`] = data[`${f.name}_sources`] ?? [];
+        }
+      });
+    }
+
     async function load() {
       if (!selectedEntity.value || !qidInput.value.trim()) return;
       loadLoading.value = true;
@@ -141,27 +165,12 @@ export default {
         const prefix = selectedEntity.value.endpoint_prefix;
         const data = await apiFetch(`${prefix}/${qidInput.value.trim()}`);
         if (!data) return;
-        loadedData.value = data;
         isNew.value = false;
         pushFormUrl(
           selectedEntityName.value.toLowerCase(),
           qidInput.value.trim(),
         );
-        Object.keys(pendingStatements).forEach((k) => {
-          delete pendingStatements[k];
-        });
-        clearSignal.value++;
-        Object.keys(pendingData).forEach((k) => {
-          delete pendingData[k];
-        });
-        selectedEntity.value.fields.forEach((f) => {
-          if (f.field_type === "statement_list") return;
-          pendingData[f.name] =
-            data[f.name] ?? (f.field_type === "list" ? [] : "");
-          if (f.supports_references) {
-            pendingData[`${f.name}_sources`] = data[`${f.name}_sources`] ?? [];
-          }
-        });
+        applyEntity(data);
       } catch (e) {
         loadError.value = e.message;
       } finally {
@@ -187,7 +196,8 @@ export default {
     }
 
     function onSaved(entity) {
-      loadedData.value = entity;
+      isNew.value = false;
+      applyEntity(entity);
       if (entity?.qid) {
         qidInput.value = entity.qid;
         history.replaceState(
@@ -196,11 +206,6 @@ export default {
           `/form/${selectedEntityName.value.toLowerCase()}/${entity.qid}`,
         );
       }
-      isNew.value = false;
-      Object.keys(pendingStatements).forEach((k) => {
-        delete pendingStatements[k];
-      });
-      clearSignal.value++;
       success.value = t("entity_saved", { qid: entity?.qid ?? "(unknown)" });
       setTimeout(() => {
         success.value = "";

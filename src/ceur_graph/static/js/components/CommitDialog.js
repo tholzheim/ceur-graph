@@ -1,4 +1,4 @@
-import { apiDelete, apiPost, apiPut } from "../api.js";
+import { apiDelete, apiFetch, apiPost, apiPut } from "../api.js";
 import { useI18n } from "../i18n.js";
 
 export default {
@@ -240,7 +240,20 @@ export default {
           }
         }
 
-        emit("saved", result);
+        // Re-fetch the persisted entity so the caller reloads a fresh, complete item: the QID, the
+        // new statement ids/qualifiers, and any statement ops that ran *after* the item write. For a
+        // statement-only edit `result` is undefined, so this is also what carries the QID back.
+        let saved = result;
+        if (entityQid) {
+          try {
+            saved = await apiFetch(`${prefix}/${entityQid}`);
+          } catch {
+            // Fall back to the write result if the reload fails; the save itself still succeeded.
+            saved = result;
+          }
+        }
+
+        emit("saved", saved);
         close();
       } catch (e) {
         error.value = e.message;
