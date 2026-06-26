@@ -73,11 +73,12 @@ export default {
 
     watch(snakType, (type) => {
       if (!subjectField.value) return;
-      if (type === "unknown_value")
-        formData[subjectField.value.name] = "somevalue";
-      else if (type === "no_value")
-        formData[subjectField.value.name] = "novalue";
-      else formData[subjectField.value.name] = "";
+      const name = subjectField.value.name;
+      if (type === "unknown_value") formData[name] = "somevalue";
+      else if (type === "no_value") formData[name] = "novalue";
+      else if (formData[name] === "somevalue" || formData[name] === "novalue") {
+        formData[name] = "";
+      }
     });
 
     function resolveLabelsForRow(row) {
