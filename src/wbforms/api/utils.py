@@ -5,14 +5,14 @@ from pydantic import BaseModel
 from starlette import status
 from wikibaseintegrator.entities import ItemEntity
 
-from ceur_graph.datamodel.item import (
+from wbforms.datamodel.item import (
     EntityBase,
     ExtractedStatement,
     ItemBase,
     Statement,
     StatementBase,
 )
-from ceur_graph.wbgenerator import (
+from wbforms.wbgenerator import (
     StatementNotFoundError,
     add_statement_from_model,
     create_item_from_model,
@@ -25,7 +25,7 @@ from ceur_graph.wbgenerator import (
     update_item_from_model,
     update_qualified_statement_from_model,
 )
-from ceur_graph.wikibase import Wikibase
+from wbforms.wikibase import Wikibase
 
 logger = logging.getLogger(__name__)
 

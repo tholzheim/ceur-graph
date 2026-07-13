@@ -4,12 +4,12 @@ codegen: generate Pydantic models and FastAPI routers from the LinkML schema at 
 All generated model classes are exposed as module-level attributes so they can be
 imported directly:
 
-    from ceur_graph.codegen import Paper, PaperCreate, SubjectBase
+    from wbforms.codegen import Paper, PaperCreate, SubjectBase
 """
 
-from ceur_graph.codegen.fastapi_gen import generate_routers
-from ceur_graph.codegen.pydantic_gen import generate_models
-from ceur_graph.settings import get_settings
+from wbforms.codegen.fastapi_gen import generate_routers
+from wbforms.codegen.pydantic_gen import generate_models
+from wbforms.settings import get_settings
 
 _SCHEMA_PATH = get_settings().schema_path
 

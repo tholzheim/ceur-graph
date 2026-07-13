@@ -3,9 +3,9 @@ import unittest
 from fastapi import HTTPException, status
 from wikibaseintegrator.entities import ItemEntity
 
-from ceur_graph.api.utils import get_model_label, handle_statement_update
-from ceur_graph.codegen import ScholarSignature, SubjectBase, get_models
-from ceur_graph.wbgenerator import create_qualified_statement_from_model
+from wbforms.api.utils import get_model_label, handle_statement_update
+from wbforms.codegen import ScholarSignature, SubjectBase, get_models
+from wbforms.wbgenerator import create_qualified_statement_from_model
 
 
 class _FakeWikibase:

@@ -12,7 +12,7 @@ from wikibaseintegrator import WikibaseIntegrator, wbi_login
 from wikibaseintegrator.entities import ItemEntity, PropertyEntity
 from wikibaseintegrator.models import Snak
 
-from ceur_graph.datamodel.auth import WikibaseAuthorizationConfig, WikibaseLoginTypes
+from wbforms.datamodel.auth import WikibaseAuthorizationConfig, WikibaseLoginTypes
 
 logger = logging.getLogger(__name__)
 
@@ -240,8 +240,8 @@ class Wikibase(BaseModel):
                     mediawiki_api_url=self.mediawiki_api_url.unicode_string(),
                 )
             case WikibaseLoginTypes.USER_OAUTH2:
-                from ceur_graph.api.oauth_login import UserOAuth2
-                from ceur_graph.settings import get_settings
+                from wbforms.api.oauth_login import UserOAuth2
+                from wbforms.settings import get_settings
 
                 return UserOAuth2(
                     access_token=self.auth_config.access_token,

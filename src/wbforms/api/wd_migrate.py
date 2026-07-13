@@ -7,9 +7,9 @@ from wikibasemigrator.migrator import WikibaseMigrator
 from wikibasemigrator.model.profile import UserToken, WikibaseMigrationProfile, load_profile
 from wikibasemigrator.model.translations import EntityTranslationResult
 
-from ceur_graph.api.auth import get_current_user
-from ceur_graph.ceur_dev import CeurDev
-from ceur_graph.datamodel.auth import WikibaseAuthorizationConfig, WikibaseLoginTypes
+from wbforms.api.auth import get_current_user
+from wbforms.datamodel.auth import WikibaseAuthorizationConfig, WikibaseLoginTypes
+from wbforms.session import WikibaseSession
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ router = APIRouter(
 @router.post("/import/{entity_id}")
 def wikidata_import(
     entity_id: str,
-    ceur_dev: Annotated[CeurDev, Depends(get_current_user)],
+    session: Annotated[WikibaseSession, Depends(get_current_user)],
     summary: str | None = None,
 ):
     """
@@ -33,12 +33,12 @@ def wikidata_import(
     # todo fix for proper resource loading
     path = Path(__file__).parent.parent.joinpath("./resources/migration_profiles/wd_to_ceur-dev.yaml")
     migration_profile = load_profile(path)
-    if ceur_dev.auth_config is None:
+    if session.auth_config is None:
         return {
             "error": True,
             "message": "Authentication configuration not provided. Please ensure that you are logged in",
         }
-    update_migration_profile(ceur_dev.auth_config, migration_profile)
+    update_migration_profile(session.auth_config, migration_profile)
     try:
         migrator = WikibaseMigrator(migration_profile)
         translations = migrator.translate_entities_by_id([entity_id])

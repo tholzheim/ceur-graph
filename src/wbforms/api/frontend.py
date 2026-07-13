@@ -9,10 +9,10 @@ from fastapi import APIRouter, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from ceur_graph.codegen import get_models
-from ceur_graph.datamodel.item import CEUR_DEV_ID, WIKIBASE_TYPE, StatementBase, WikibaseReferenceBase
-from ceur_graph.settings import get_settings
-from ceur_graph.wbgenerator import _is_list_annotation, _wikibase_reference_class, get_statement_field_type
+from wbforms.codegen import get_models
+from wbforms.datamodel.item import WIKIBASE_ID, WIKIBASE_TYPE, StatementBase, WikibaseReferenceBase
+from wbforms.settings import get_settings
+from wbforms.wbgenerator import _is_list_annotation, _wikibase_reference_class, get_statement_field_type
 
 _STATIC_DIR = Path(__file__).parent.parent / "static"
 
@@ -44,14 +44,14 @@ def _label(name: str) -> str:
 
 
 def _build_statement_fields(stmt_cls: type[StatementBase]) -> list[dict]:
-    subject_field_name = stmt_cls.get_statement_subject(CEUR_DEV_ID)
+    subject_field_name = stmt_cls.get_statement_subject(WIKIBASE_ID)
     fields = []
     for fname, finfo in stmt_cls.model_fields.items():
         if fname in _SKIP_FIELDS:
             continue
         extra = finfo.json_schema_extra if isinstance(finfo.json_schema_extra, dict) else {}
-        ceur_id = extra.get(CEUR_DEV_ID, "")
-        if ceur_id in _INTERNAL_WB_IDS:
+        wb_id = extra.get(WIKIBASE_ID, "")
+        if wb_id in _INTERNAL_WB_IDS:
             continue
         entry = {
             "name": fname,
@@ -82,7 +82,7 @@ def _reference_class_for(stmt_cls: type[StatementBase]) -> type[WikibaseReferenc
 def _build_reference_fields(ref_cls: type[WikibaseReferenceBase]) -> list[dict]:
     """Return frontend field descriptors for a WikibaseReference inner class."""
     fields = []
-    for fname in ref_cls.get_reference_fields(CEUR_DEV_ID):
+    for fname in ref_cls.get_reference_fields(WIKIBASE_ID):
         finfo = ref_cls.model_fields[fname]
         fields.append(
             {
@@ -125,8 +125,8 @@ def _build_entity_schema(
             continue
 
         extra = finfo.json_schema_extra if isinstance(finfo.json_schema_extra, dict) else {}
-        ceur_id = extra.get(CEUR_DEV_ID, "")
-        if ceur_id in _INTERNAL_WB_IDS:
+        wb_id = extra.get(WIKIBASE_ID, "")
+        if wb_id in _INTERNAL_WB_IDS:
             continue
 
         # Statement-reference field (list[ScholarSignature], etc.)
@@ -160,7 +160,7 @@ def _build_entity_schema(
             )
             continue
 
-        if not ceur_id or ceur_id in _INTERNAL_WB_IDS:
+        if not wb_id or wb_id in _INTERNAL_WB_IDS:
             continue
 
         descriptor: dict = {

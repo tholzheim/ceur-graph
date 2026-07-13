@@ -8,11 +8,11 @@ from fastapi import Depends, FastAPI
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 
-from ceur_graph.api import ceurws, wd_migrate
-from ceur_graph.api.auth import login_user
-from ceur_graph.api.frontend import router as frontend_router
-from ceur_graph.api.oauth import router as oauth_router
-from ceur_graph.codegen import get_routers
+from wbforms.api import ceurws, wd_migrate
+from wbforms.api.auth import login_user
+from wbforms.api.frontend import router as frontend_router
+from wbforms.api.oauth import router as oauth_router
+from wbforms.codegen import get_routers
 
 
 def _setup_logging() -> None:

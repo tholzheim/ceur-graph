@@ -12,8 +12,8 @@ from wikibaseintegrator.models import Claim, Snak
 from wikibaseintegrator.models.references import Reference as WBIReference
 from wikibaseintegrator.wbi_enums import ActionIfExists, WikibaseSnakType
 
-from ceur_graph.datamodel.item import (
-    CEUR_DEV_ID,
+from wbforms.datamodel.item import (
+    WIKIBASE_ID,
     WIKIBASE_TYPE,
     Coordinate,
     ExtractedStatement,
@@ -21,7 +21,7 @@ from ceur_graph.datamodel.item import (
     StatementBase,
     WikibaseReferenceBase,
 )
-from ceur_graph.wikibase import Wikibase
+from wbforms.wikibase import Wikibase
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +130,7 @@ def create_item_from_model(model: BaseModel, wbi: WikibaseIntegrator) -> ItemEnt
         if not extra:
             continue
         field_type = extra.get(WIKIBASE_TYPE)
-        field_prop_id = extra.get(CEUR_DEV_ID)
+        field_prop_id = extra.get(WIKIBASE_ID)
         if field_prop_id == "rdfs:label":
             item.labels.set(default_language, field_value)
         elif field_prop_id == "schema:description":
@@ -183,8 +183,8 @@ def update_item_from_model(model: BaseModel, item: ItemEntity):
         # Statement-reference field
         stmt_type = get_statement_field_type(field_metadata.annotation)
         if stmt_type is not None:
-            subject_field = stmt_type.get_statement_subject(CEUR_DEV_ID)
-            subject_prop_id = stmt_type.model_fields[subject_field].json_schema_extra.get(CEUR_DEV_ID)
+            subject_field = stmt_type.get_statement_subject(WIKIBASE_ID)
+            subject_prop_id = stmt_type.model_fields[subject_field].json_schema_extra.get(WIKIBASE_ID)
             subject_prop_nr = Wikibase.get_entity_id(subject_prop_id)
             _remove_property_claims(item, subject_prop_nr)
             values = field_value if isinstance(field_value, list) else ([field_value] if field_value else [])
@@ -198,7 +198,7 @@ def update_item_from_model(model: BaseModel, item: ItemEntity):
         if not extra:
             continue
         field_type = extra.get(WIKIBASE_TYPE)
-        field_prop_id = extra.get(CEUR_DEV_ID)
+        field_prop_id = extra.get(WIKIBASE_ID)
         if field_prop_id == "rdfs:label":
             if field_value is not None:
                 item.labels.set(
@@ -263,7 +263,7 @@ def update_item_from_model(model: BaseModel, item: ItemEntity):
             continue
         base_metadata: FieldInfo = model_cls.model_fields[base_name]
         base_extra = _get_schema_extra(base_metadata)
-        base_prop_id = base_extra.get(CEUR_DEV_ID)
+        base_prop_id = base_extra.get(WIKIBASE_ID)
         if not base_prop_id or base_prop_id in {"rdf:subject", "rdfs:label", "schema:description"}:
             continue
         base_prop_nr = Wikibase.get_entity_id(base_prop_id)
@@ -404,7 +404,7 @@ def get_model_from_item(item: ItemEntity, model: type[BaseModel]) -> BaseModel:
         extra = _get_schema_extra(field_metadata)
         if not extra:
             continue
-        field_prop_id = extra.get(CEUR_DEV_ID)
+        field_prop_id = extra.get(WIKIBASE_ID)
         field_value = None
         if field_prop_id == "rdf:subject":
             field_value = item.id
@@ -458,8 +458,8 @@ def get_models_from_qualified_statement[T: StatementBase](item: ItemEntity, mode
     :param model:
     :return:
     """
-    subject_field = model.get_statement_subject(CEUR_DEV_ID)
-    subject_prop_id = model.model_fields.get(subject_field).json_schema_extra.get(CEUR_DEV_ID)
+    subject_field = model.get_statement_subject(WIKIBASE_ID)
+    subject_prop_id = model.model_fields.get(subject_field).json_schema_extra.get(WIKIBASE_ID)
     subject_prop_nr = Wikibase.get_entity_id(subject_prop_id)
     claims: list[Claim] = item.claims.get(subject_prop_nr)
     statements: list[StatementBase] = []
@@ -478,7 +478,7 @@ def get_model_from_qualified_statement(claim: Claim, model: type[StatementBase])
     :return:
     """
     record = {}
-    subject_field = model.get_statement_subject(CEUR_DEV_ID)
+    subject_field = model.get_statement_subject(WIKIBASE_ID)
     if claim.mainsnak.snaktype is WikibaseSnakType.UNKNOWN_VALUE:
         record[subject_field] = WikibaseSnakType.UNKNOWN_VALUE.value
     elif claim.mainsnak.snaktype is WikibaseSnakType.NO_VALUE:
@@ -487,10 +487,10 @@ def get_model_from_qualified_statement(claim: Claim, model: type[StatementBase])
         record[subject_field] = get_snak_value(claim.mainsnak)
     if issubclass(model, Statement):
         record["statement_id"] = claim.id
-    qualifier_fields = model.get_qualifier_fields(CEUR_DEV_ID)
+    qualifier_fields = model.get_qualifier_fields(WIKIBASE_ID)
     for qualifier_field in qualifier_fields:
         field_metadata: FieldInfo = model.model_fields.get(qualifier_field)
-        field_prop_id = field_metadata.json_schema_extra.get(CEUR_DEV_ID)
+        field_prop_id = field_metadata.json_schema_extra.get(WIKIBASE_ID)
         field_prop_nr = Wikibase.get_entity_id(field_prop_id)
         if field_prop_nr is None:
             continue
@@ -566,8 +566,8 @@ def get_item_statement_by_id(item: ItemEntity, statement_id: str, target_model: 
 
 
 def create_qualified_statement_from_model(model: StatementBase) -> Claim:
-    subject_field = model.get_statement_subject(CEUR_DEV_ID)
-    subject_prop_id = model.model_fields.get(subject_field).json_schema_extra.get(CEUR_DEV_ID)
+    subject_field = model.get_statement_subject(WIKIBASE_ID)
+    subject_prop_id = model.model_fields.get(subject_field).json_schema_extra.get(WIKIBASE_ID)
     subject_prop_nr = Wikibase.get_entity_id(subject_prop_id)
     claim: Claim
     subject_val = getattr(model, subject_field)
@@ -615,14 +615,14 @@ def _wikibase_reference_class(field_info: FieldInfo) -> type[WikibaseReferenceBa
 def _build_reference_block(ref_model: WikibaseReferenceBase) -> WBIReference | None:
     """Build one WBIReference block from a WikibaseReference instance. Returns None if empty."""
     ref_block = WBIReference()
-    for ref_field in ref_model.get_reference_fields(CEUR_DEV_ID):
+    for ref_field in ref_model.get_reference_fields(WIKIBASE_ID):
         value = getattr(ref_model, ref_field, None)
         if value is None:
             continue
         meta = type(ref_model).model_fields[ref_field]
         extra = _get_schema_extra(meta)
         snak_claim = get_claim(
-            prop_id=extra.get(CEUR_DEV_ID),
+            prop_id=extra.get(WIKIBASE_ID),
             datatype=extra.get(WIKIBASE_TYPE),
             value=value,
         )
@@ -646,10 +646,10 @@ def _extract_reference_records(claim: Claim, ref_cls: type[WikibaseReferenceBase
     sources: list[dict] = []
     for ref_block in claim.references:
         block_record: dict = {}
-        for ref_field in ref_cls.get_reference_fields(CEUR_DEV_ID):
+        for ref_field in ref_cls.get_reference_fields(WIKIBASE_ID):
             meta = ref_cls.model_fields[ref_field]
             extra = meta.json_schema_extra if isinstance(meta.json_schema_extra, dict) else {}
-            prop_id = extra.get(CEUR_DEV_ID)
+            prop_id = extra.get(WIKIBASE_ID)
             prop_nr = Wikibase.get_entity_id(prop_id) if prop_id else None
             if prop_nr is None:
                 continue
@@ -688,10 +688,10 @@ def add_qualifier_values_to_statement(claim: Claim, model: StatementBase):
     :param model:
     :return:
     """
-    qualifier_fields = model.get_qualifier_fields(CEUR_DEV_ID)
+    qualifier_fields = model.get_qualifier_fields(WIKIBASE_ID)
     for qualifier_field in qualifier_fields:
         qualifier_metadata: FieldInfo = model.model_fields.get(qualifier_field)
-        qualifier_prop_id = qualifier_metadata.json_schema_extra.get(CEUR_DEV_ID)
+        qualifier_prop_id = qualifier_metadata.json_schema_extra.get(WIKIBASE_ID)
         qualifier_type = qualifier_metadata.json_schema_extra.get(WIKIBASE_TYPE)
         qualifier_prop_nr = Wikibase.get_entity_id(qualifier_prop_id)
         qualifiers = []
@@ -717,8 +717,8 @@ def delete_property_statement_by_id(item: ItemEntity, statement_id: str, model_t
     :param model_type:
     :return: True if the statement was deleted otherwise False if the statement was not found
     """
-    subject_field = model_type.get_statement_subject(CEUR_DEV_ID)
-    subject_prop_id = model_type.model_fields.get(subject_field).json_schema_extra.get(CEUR_DEV_ID)
+    subject_field = model_type.get_statement_subject(WIKIBASE_ID)
+    subject_prop_id = model_type.model_fields.get(subject_field).json_schema_extra.get(WIKIBASE_ID)
     subject_prop_nr = Wikibase.get_entity_id(subject_prop_id)
     for claim in item.claims.get(subject_prop_nr):
         if _statement_ids_equal(claim.id, statement_id):
@@ -734,8 +734,8 @@ def delete_statement_by_matching_model(item: ItemEntity, model: StatementBase) -
     :param model:
     :return:
     """
-    subject_field = model.get_statement_subject(CEUR_DEV_ID)
-    subject_prop_id = model.model_fields.get(subject_field).json_schema_extra.get(CEUR_DEV_ID)
+    subject_field = model.get_statement_subject(WIKIBASE_ID)
+    subject_prop_id = model.model_fields.get(subject_field).json_schema_extra.get(WIKIBASE_ID)
     subject_prop_nr = Wikibase.get_entity_id(subject_prop_id)
     for claim in item.claims.get(subject_prop_nr):
         claim_model = get_model_from_qualified_statement(claim, model.__class__)
@@ -782,10 +782,10 @@ def update_qualified_statement_from_model(item: ItemEntity, statement_id: str, m
     claim = get_calim_by_statement_id(item, statement_id)
     if claim is None:
         raise StatementNotFoundError(statement_id, [c.id for c in item.claims])
-    statement_object_field = model.get_statement_subject(CEUR_DEV_ID)
+    statement_object_field = model.get_statement_subject(WIKIBASE_ID)
     statement_object_value = getattr(model, statement_object_field)
     statement_metadata = model.model_fields.get(statement_object_field)
-    statement_prop_id = statement_metadata.json_schema_extra.get(CEUR_DEV_ID)
+    statement_prop_id = statement_metadata.json_schema_extra.get(WIKIBASE_ID)
     statement_prop_nr = Wikibase.get_entity_id(statement_prop_id)
     statement_type = statement_metadata.json_schema_extra.get(WIKIBASE_TYPE)
     if statement_object_value is not None:
@@ -806,12 +806,12 @@ def update_qualified_statement_from_model(item: ItemEntity, statement_id: str, m
                 value=statement_object_value,
             )
         claim.mainsnak = new_mainsnak.mainsnak
-    qualifier_fields = model.get_qualifier_fields(CEUR_DEV_ID)
+    qualifier_fields = model.get_qualifier_fields(WIKIBASE_ID)
     for model_field in model.model_fields_set:
         if model_field not in qualifier_fields:
             continue
         qualifier_metadata = model.model_fields.get(model_field)
-        qualifier_prop_id = qualifier_metadata.json_schema_extra.get(CEUR_DEV_ID)
+        qualifier_prop_id = qualifier_metadata.json_schema_extra.get(WIKIBASE_ID)
         qualifier_prop_nr = Wikibase.get_entity_id(qualifier_prop_id)
         # remove existing values (iterate a copy: Qualifiers.remove mutates the
         # internal list returned by .get(), same WBI bug worked around in

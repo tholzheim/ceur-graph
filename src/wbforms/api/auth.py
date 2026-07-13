@@ -10,15 +10,15 @@ from pydantic import BaseModel
 from starlette import status
 from wikibaseintegrator.wbi_login import LoginError
 
-from ceur_graph.ceur_dev import CeurDev
-from ceur_graph.datamodel.auth import WikibaseBotAuth
-from ceur_graph.settings import get_settings
+from wbforms.datamodel.auth import WikibaseBotAuth
+from wbforms.session import WikibaseSession
+from wbforms.settings import get_settings
 
 SECRET_KEY = secrets.token_hex(20)
 ALGORITHM = "HS256"
 _OAUTH_STATE_TTL_SECONDS = 600
 
-users_db: dict[str, CeurDev] = {}
+users_db: dict[str, WikibaseSession] = {}
 oauth_states: dict[str, float] = {}
 oauth_request_tokens: dict[str, tuple[str, float]] = {}
 
@@ -34,10 +34,10 @@ def _access_token_expires() -> timedelta:
     return timedelta(minutes=get_settings().session_ttl_minutes)
 
 
-def register_session(ceur_dev: CeurDev, subject: str) -> str:
-    """Issue a session token for the given CeurDev instance and store it."""
+def register_session(session: WikibaseSession, subject: str) -> str:
+    """Issue a session token for the given WikibaseSession instance and store it."""
     access_token = create_access_token(data={"sub": subject}, expires_delta=_access_token_expires())
-    users_db[access_token] = ceur_dev
+    users_db[access_token] = session
     return access_token
 
 
@@ -47,17 +47,17 @@ async def login_user(username: str, password: str) -> Token:
     After generating the access token, the token and the Wikibase login object are stored in the user db
     """
     auth = WikibaseBotAuth(user=username, password=password)
-    ceur_dev = CeurDev(auth)
+    session = WikibaseSession(auth)
     try:
-        ceur_dev.get_wbi_login()
+        session.get_wbi_login()
     except LoginError as e:
         raise HTTPException(status_code=400, detail="Incorrect username or password") from e
 
-    access_token = register_session(ceur_dev, subject=username)
+    access_token = register_session(session, subject=username)
     return Token(access_token=access_token, token_type="bearer")
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> CeurDev:
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> WikibaseSession:
     """
     Get the wikibase instance of the current user.
     The current user identifies with his token.

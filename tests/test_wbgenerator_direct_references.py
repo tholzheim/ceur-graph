@@ -4,8 +4,8 @@ import unittest
 
 from wikibaseintegrator import WikibaseIntegrator
 
-from ceur_graph.codegen import get_models
-from ceur_graph.wbgenerator import (
+from wbforms.codegen import get_models
+from wbforms.wbgenerator import (
     create_item_from_model,
     get_model_from_item,
     update_item_from_model,

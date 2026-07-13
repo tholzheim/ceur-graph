@@ -11,8 +11,8 @@ Exposes two endpoints:
 
 * ``GET /oauth/login`` — starts the appropriate authorization flow.
 * ``GET /oauth/callback`` — completes the flow, builds a user-bound
-  :class:`CeurDev`, stores it in the session store, and redirects the SPA
-  with the session token in the URL fragment.
+  :class:`WikibaseSession`, stores it in the session store, and redirects the
+  SPA with the session token in the URL fragment.
 """
 
 import asyncio
@@ -24,16 +24,16 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from requests_oauthlib import OAuth1Session
 
-from ceur_graph.api.auth import (
+from wbforms.api.auth import (
     consume_oauth_state,
     consume_request_token,
     issue_oauth_state,
     register_session,
     remember_request_token,
 )
-from ceur_graph.ceur_dev import CeurDev
-from ceur_graph.datamodel.auth import WikibaseOauth1, WikibaseUserOAuth2
-from ceur_graph.settings import get_settings
+from wbforms.datamodel.auth import WikibaseOauth1, WikibaseUserOAuth2
+from wbforms.session import WikibaseSession
+from wbforms.settings import get_settings
 
 router = APIRouter(prefix="/oauth", tags=["Authentication"])
 
@@ -244,11 +244,11 @@ def _oauth1_identify(client_id: str, client_secret: str, access_token: str, acce
 
 
 def _finalize_login(auth, username: str) -> RedirectResponse:
-    ceur_dev = CeurDev(auth)
+    session = WikibaseSession(auth)
     # Eagerly resolve the wbi login so we fail loudly here if the token is bad,
     # rather than on the user's first edit.
-    ceur_dev.get_wbi_login()
-    session_token = register_session(ceur_dev, subject=username)
+    session.get_wbi_login()
+    session_token = register_session(session, subject=username)
 
     app_base = get_settings().app_base_url.unicode_string().rstrip("/")
     return RedirectResponse(url=f"{app_base}/#token={session_token}", status_code=302)

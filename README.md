@@ -1,18 +1,23 @@
 ![GitHub](https://img.shields.io/github/license/tholzheim/ceur-graph)
 ![Python Version](https://img.shields.io/badge/python-3.12%2B-blue.svg)
 ![Development Status](https://img.shields.io/badge/status-beta-yellowgreen.svg)
-# CEUR-Graph
-CEUR-Graph is a Python library that provides a RESTful API for adding CEUR-WS data into the CEUR-dev Wikibase instance. This instance functions as a semantification target for CEUR-WS and is synchronized with Wikidata.
-## Features
-* RESTful API: Easily add and manage CEUR-WS data. 
-* Wikibase Integration: Seamlessly integrates with the CEUR-dev Wikibase instance. 
-* Synchronization with Wikidata: Keeps your data in sync with Wikidata.
+# wbforms
+wbforms (Wikibase forms) is a schema-driven web application for editing entities in a Wikibase instance. A [LinkML](https://linkml.io) schema describes the entity types, their statements, qualifiers, and references; at startup wbforms generates the Pydantic models, REST CRUD endpoints, and edit forms from that schema. Point it at a different schema and Wikibase instance to serve a different use case — no code changes required.
 
+Bundled use cases:
+* **CEUR-WS** (`src/wbforms/schema/ceur_graph.yaml`, default): proceedings/paper metadata in the [CEUR-dev Wikibase](https://ceur-dev.wikibase.cloud), synchronized with Wikidata.
+* **FactGrid Besucherbuch** (`src/wbforms/schema/factgrid_besucherbuch.yaml`): visitor-book records in [FactGrid](https://database.factgrid.de).
+
+## Features
+* Schema-driven: entity types, forms, and REST endpoints are generated from a LinkML schema at startup.
+* RESTful API: CRUD endpoints for items and (qualified) statements, with OpenAPI docs at `/docs`.
+* Wikibase integration: reads and writes via WikibaseIntegrator and SPARQL; works with wikibase.cloud and classic MediaWiki deployments.
+* OAuth 2.0 / 1.0a and bot-password login.
 
 ## Usage
 To run the FastAPI application, execute the following command:
 ```shell
-uv run fastapi dev src/ceur_graph/main.py
+uv run fastapi dev src/wbforms/main.py
 ```
 
 To format the code using Ruff, run:
@@ -23,7 +28,7 @@ uv run ruff format
 
 ## Frontend tooling
 
-JavaScript files in `src/ceur_graph/static/js/` are checked with [Biome](https://biomejs.dev) (requires Node ≥ 18).
+JavaScript files in `src/wbforms/static/js/` are checked with [Biome](https://biomejs.dev) (requires Node ≥ 18).
 
 Install once:
 ```shell
@@ -32,37 +37,38 @@ npm install -g @biomejs/biome
 
 Check formatting and linting:
 ```shell
-biome check src/ceur_graph/static/js/
+biome check src/wbforms/static/js/
 ```
 
 Auto-fix (format + safe lint fixes):
 ```shell
-biome check --write src/ceur_graph/static/js/
+biome check --write src/wbforms/static/js/
 ```
 
 
 ## Configuration
 
-The Wikibase URLs and OAuth client credentials are read from environment
-variables (or a `.env` file) at startup. All variables are prefixed with
-`CEUR_GRAPH_`. The Wikibase URLs default to the public CEUR-dev instance,
-so you only need to override them when targeting a different Wikibase.
+The Wikibase URLs, schema path, and OAuth client credentials are read from
+environment variables (or a `.env` file) at startup. All variables are
+prefixed with `WBFORMS_`. The Wikibase URLs default to the public CEUR-dev
+instance, so you only need to override them when targeting a different
+Wikibase.
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
-| `CEUR_GRAPH_WIKIBASE_WEBSITE` | Wikibase root URL | `https://ceur-dev.wikibase.cloud/` |
-| `CEUR_GRAPH_WIKIBASE_SPARQL_ENDPOINT` | SPARQL endpoint | `.../query/sparql` |
-| `CEUR_GRAPH_WIKIBASE_ITEM_PREFIX` | Item IRI prefix | `.../entity/` |
-| `CEUR_GRAPH_WIKIBASE_PROPERTY_PREFIX` | Property IRI prefix | `.../prop/direct/` |
-| `CEUR_GRAPH_WIKIBASE_MEDIAWIKI_API_URL` | MediaWiki API (`/w/api.php`) | `.../w/api.php` |
-| `CEUR_GRAPH_WIKIBASE_MEDIAWIKI_REST_URL` | MediaWiki REST API (`/w/rest.php`) | `.../w/rest.php` |
-| `CEUR_GRAPH_OAUTH_VERSION` | `"2.0"` (Wikibase REST) or `"1.0a"` (classic MediaWiki, e.g. FactGrid) | `2.0` |
-| `CEUR_GRAPH_OAUTH_CLIENT_ID` | OAuth consumer ID/token (2.0: `client_id`; 1.0a: consumer token) | _required for login_ |
-| `CEUR_GRAPH_OAUTH_CLIENT_SECRET` | OAuth consumer secret (same field, both versions) | _required for login_ |
-| `CEUR_GRAPH_OAUTH_REDIRECT_URI` | Callback URL registered with the OAuth consumer | _required for login_ |
-| `CEUR_GRAPH_APP_BASE_URL` | Public base URL of the SPA | `http://localhost:8000/` |
-| `CEUR_GRAPH_SESSION_TTL_MINUTES` | Session lifetime | `60` |
-| `CEUR_GRAPH_SCHEMA_PATH` | LinkML schema file driving model + router codegen | bundled `ceur_graph.yaml` |
+| `WBFORMS_WIKIBASE_WEBSITE` | Wikibase root URL | `https://ceur-dev.wikibase.cloud/` |
+| `WBFORMS_WIKIBASE_SPARQL_ENDPOINT` | SPARQL endpoint | `.../query/sparql` |
+| `WBFORMS_WIKIBASE_ITEM_PREFIX` | Item IRI prefix | `.../entity/` |
+| `WBFORMS_WIKIBASE_PROPERTY_PREFIX` | Property IRI prefix | `.../prop/direct/` |
+| `WBFORMS_WIKIBASE_MEDIAWIKI_API_URL` | MediaWiki API (`/w/api.php`) | `.../w/api.php` |
+| `WBFORMS_WIKIBASE_MEDIAWIKI_REST_URL` | MediaWiki REST API (`/w/rest.php`) | `.../w/rest.php` |
+| `WBFORMS_OAUTH_VERSION` | `"2.0"` (Wikibase REST) or `"1.0a"` (classic MediaWiki, e.g. FactGrid) | `2.0` |
+| `WBFORMS_OAUTH_CLIENT_ID` | OAuth consumer ID/token (2.0: `client_id`; 1.0a: consumer token) | _required for login_ |
+| `WBFORMS_OAUTH_CLIENT_SECRET` | OAuth consumer secret (same field, both versions) | _required for login_ |
+| `WBFORMS_OAUTH_REDIRECT_URI` | Callback URL registered with the OAuth consumer | _required for login_ |
+| `WBFORMS_APP_BASE_URL` | Public base URL of the SPA | `http://localhost:8000/` |
+| `WBFORMS_SESSION_TTL_MINUTES` | Session lifetime | `60` |
+| `WBFORMS_SCHEMA_PATH` | LinkML schema file driving model + router codegen | bundled `ceur_graph.yaml` |
 
 A ready-to-edit template is provided at `.env.example` — copy it to `.env`
 and adjust the values for your deployment.
@@ -71,14 +77,14 @@ For `OAUTH_VERSION=2.0` (default — wikibase.cloud-hosted instances such as
 ceur-dev), register an OAuth 2.0 consumer (confidential client,
 authorization-code grant) at
 `${WIKIBASE_WEBSITE}wiki/Special:OAuthConsumerRegistration/propose` with the
-callback URL set to `${CEUR_GRAPH_OAUTH_REDIRECT_URI}`
+callback URL set to `${WBFORMS_OAUTH_REDIRECT_URI}`
 (e.g. `http://localhost:8000/oauth/callback`).
 
 For `OAUTH_VERSION=1.0a` (classic MediaWiki deployments such as FactGrid),
 register an OAuth 1.0a consumer at
 `${WIKIBASE_WEBSITE}wiki/Special:OAuthConsumerRegistration/propose/oauth1a`
 with the same callback URL. Use the resulting consumer token/secret as
-`CEUR_GRAPH_OAUTH_CLIENT_ID` / `CEUR_GRAPH_OAUTH_CLIENT_SECRET`.
+`WBFORMS_OAUTH_CLIENT_ID` / `WBFORMS_OAUTH_CLIENT_SECRET`.
 
 The login button in the UI redirects to the Wikibase login, and after
 consent the user is sent back to the SPA with a session token. The REST
@@ -87,7 +93,7 @@ non-interactive clients keep working.
 
 ## Docker Support
 
-CEUR-Graph can be easily deployed using Docker.
+wbforms can be easily deployed using Docker.
 
 Copy `.env.example` to `.env`, fill in the OAuth credentials (and any
 Wikibase URLs you want to override), then:
@@ -104,7 +110,7 @@ docker compose down
 
 To deploy against a different LinkML schema, place your schema YAML next
 to `docker-compose.yml`, uncomment the `volumes:` block in
-`docker-compose.yml`, and point `CEUR_GRAPH_SCHEMA_PATH` in `.env` at
+`docker-compose.yml`, and point `WBFORMS_SCHEMA_PATH` in `.env` at
 the in-container mount path.
 
 

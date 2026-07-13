@@ -21,7 +21,7 @@ const messages = {
     app_loading_schema: "Loading schema…",
     app_schema_error: "Failed to load schema: {error}",
 
-    login_title: "CEUR-WS Entity Editor",
+    login_title: "wbforms Entity Editor",
     login_subtitle: "Sign in with your Wikibase account",
     login_invalid: "Invalid credentials",
     login_username: "Username",
@@ -29,7 +29,7 @@ const messages = {
     login_submit: "Login with Wikibase",
     login_oauth_version: "Using OAuth {version}",
 
-    nav_title: "CEUR-WS Entity Editor",
+    nav_title: "wbforms Entity Editor",
     nav_logout: "Logout",
     entity_type_label: "Entity type",
     entity_type_placeholder: "— Select —",
@@ -107,7 +107,7 @@ const messages = {
     app_loading_schema: "Schema wird geladen…",
     app_schema_error: "Schema konnte nicht geladen werden: {error}",
 
-    login_title: "CEUR-WS Entitätseditor",
+    login_title: "wbforms Entitätseditor",
     login_subtitle: "Mit Wikibase-Konto anmelden",
     login_invalid: "Ungültige Zugangsdaten",
     login_username: "Benutzername",
@@ -115,7 +115,7 @@ const messages = {
     login_submit: "Mit Wikibase anmelden",
     login_oauth_version: "Verwendet OAuth {version}",
 
-    nav_title: "CEUR-WS Entitätseditor",
+    nav_title: "wbforms Entitätseditor",
     nav_logout: "Abmelden",
     entity_type_label: "Entitätstyp",
     entity_type_placeholder: "— Auswählen —",

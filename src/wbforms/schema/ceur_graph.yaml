@@ -23,203 +23,203 @@ slots:
   title:
     range: string
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P5"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/direct/P5"
       wikidata_id: "http://www.wikidata.org/prop/direct/P1476"
       wikibase_type: monolingualtext
 
   object_named_as:
     range: string
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P91"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P91"
       wikibase_type: string
 
   dblp_publication_id:
     range: string
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P9"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/direct/P9"
       wikibase_type: external-id
 
   copyright_license:
     range: string
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P96"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/direct/P96"
       wikibase_type: item
 
   wikidata_id:
     range: string
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P2"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/direct/P2"
       wikibase_type: external-id
 
   language_of_work:
     range: string
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P14"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/direct/P14"
       wikibase_type: item
 
   full_work_available_at_url:
     range: anyuri
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P12"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/direct/P12"
       wikibase_type: url
 
   published_in:
     range: string
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P94"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/direct/P94"
       wikibase_type: item
 
   pages:
     range: integer
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P89"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/direct/P89"
       wikibase_type: string
 
   presented_in:
     range: string
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P95"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/direct/P95"
       wikibase_type: item
 
   short_name:
     range: string
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P11"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/direct/P11"
       wikibase_type: monolingualtext
 
   urn:
     range: string
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P7"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/direct/P7"
       wikibase_type: external-id
 
   is_proceedings_from:
     range: string
     multivalued: true
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P16"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/direct/P16"
       wikibase_type: item
 
   volume:
     range: integer
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P17"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/direct/P17"
       wikibase_type: string
 
   part_of_the_series:
     range: string
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P15"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/direct/P15"
       wikibase_type: item
 
   number_of_submissions:
     range: integer
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P56"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/direct/P56"
       wikidata_id: "http://www.wikidata.org/prop/direct/P12655"
       wikibase_type: quantity
 
   number_of_accepted_submissions:
     range: integer
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/direct/P77"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/direct/P77"
       wikidata_id: "http://www.wikidata.org/prop/direct/P12649"
       wikibase_type: quantity
 
   scholar_id:
     range: item_statement_subject
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/statement/P93"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/statement/P93"
       wikibase_type: item
 
   series_ordinal:
     range: integer
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P18"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P18"
       wikibase_type: string
 
   orcid_id:
     range: string
     pattern: "\\d{4}-\\d{4}-\\d{4}-\\d{3}[\\dX]"
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P87"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P87"
       wikibase_type: external-id
 
   affiliation_string:
     range: string
     multivalued: true
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P19"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P19"
       wikibase_type: string
 
   affiliation:
     range: string
     multivalued: true
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P20"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P20"
       wikibase_type: item
 
   dblp_author_id:
     range: string
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P88"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P88"
       wikibase_type: external-id
 
   subject_id:
     range: item_statement_subject
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/statement/P72"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/statement/P72"
       wikibase_type: item
 
   reference_id:
     range: item_statement_subject
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/statement/P90"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/statement/P90"
       wikibase_type: item
 
   doi:
     range: string
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P29"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P29"
       wikibase_type: external-id
 
   author_name_string:
     range: string
     multivalued: true
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P92"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P92"
       wikibase_type: string
 
   author:
     range: string
     multivalued: true
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P93"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P93"
       wikibase_type: item
 
   described_at_url:
     range: anyuri
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P8"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P8"
       wikibase_type: url
 
   # Wikibase statement-level reference slots (path segment: /reference/Pxx)
   stated_in:
     range: item_statement_subject
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/reference/P34"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/reference/P34"
       wikibase_type: item
 
   reference_url:
     range: anyuri
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/reference/P66"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/reference/P66"
       wikibase_type: url
 
   retrieved:
     range: string
     annotations:
-      ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/reference/P24"
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/reference/P24"
       wikibase_type: time
 
   # Statement-reference slots (range is a schema class, no Wikibase annotations)
@@ -341,7 +341,7 @@ classes:
     slot_usage:
       scholar_id:
         annotations:
-          ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/statement/P10"
+          wikibase_id: "https://ceur-dev.wikibase.cloud/prop/statement/P10"
           wikibase_type: item
 
   Subject:
@@ -368,7 +368,7 @@ classes:
     slot_usage:
       title:
         annotations:
-          ceur_dev_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P5"
+          wikibase_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P5"
           wikidata_id: "http://www.wikidata.org/prop/qualifier/P1476"
           wikibase_type: monolingualtext
 

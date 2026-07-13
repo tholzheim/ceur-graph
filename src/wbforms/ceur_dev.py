@@ -1,45 +1,14 @@
 import logging
-from importlib.resources import files
-from string import Template
 
-import ceur_graph.resources.queries
-from ceur_graph.datamodel.auth import WikibaseAuthorizationConfig
-from ceur_graph.settings import get_settings
-from ceur_graph.wikibase import Wikibase
+from wbforms.session import WikibaseSession
 
 logger = logging.getLogger(__name__)
 
 
-class CeurDev(Wikibase):
+class CeurDev(WikibaseSession):
     """
-    Provides access to the Ceur-dev Wikibase API.
+    CEUR-WS use case: queries against the ceur-dev Wikibase instance.
     """
-
-    def __init__(self, auth_config: WikibaseAuthorizationConfig | None = None):
-        settings = get_settings()
-        super().__init__(
-            sparql_endpoint=settings.wikibase_sparql_endpoint,
-            website=settings.wikibase_website,
-            item_prefix=settings.wikibase_item_prefix,
-            property_prefix=settings.wikibase_property_prefix,
-            mediawiki_api_url=settings.wikibase_mediawiki_api_url,
-            auth_config=auth_config,
-        )
-
-    @classmethod
-    def _load_query_and_substitute(cls, query_file: str, params: dict) -> str:
-        """
-        Load the query file and substitute it with the provided params.
-        :param query_file:
-        :param params:
-        :return:
-        """
-        query_str = files(ceur_graph.resources.queries).joinpath(query_file).read_text()
-        query_template = Template(query_str)
-        query = query_template.safe_substitute(params)
-        if query is None:
-            raise ValueError(f"Unable to build query: {query_file} with params: {params}")
-        return query
 
     @classmethod
     def get_papers_of_proceedings_by_volume_number_query(cls, volume_number: int) -> str:

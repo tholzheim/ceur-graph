@@ -9,7 +9,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Configuration for the CEUR-Graph backend.
+    """Configuration for the wbforms backend.
 
     All Wikibase URLs default to the ceur-dev instance so the service runs
     without any extra configuration. Override via environment variables
@@ -23,7 +23,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
-
+    # ToDo: Check where these constants are used
     wikibase_website: HttpUrl = HttpUrl("https://ceur-dev.wikibase.cloud/")
     wikibase_sparql_endpoint: HttpUrl = HttpUrl("https://ceur-dev.wikibase.cloud/query/sparql")
     wikibase_item_prefix: HttpUrl = HttpUrl("https://ceur-dev.wikibase.cloud/entity/")

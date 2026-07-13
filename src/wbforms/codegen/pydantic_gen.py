@@ -9,8 +9,8 @@ from pydantic import AnyHttpUrl, ConfigDict, Field, create_model
 from wikibaseintegrator import datatypes
 from wikibaseintegrator.wbi_enums import WikibaseSnakType
 
-from ceur_graph.datamodel.item import (
-    CEUR_DEV_ID,
+from wbforms.datamodel.item import (
+    WIKIBASE_ID,
     WIKIBASE_TYPE,
     WIKIDATA_ID,
     EntityBase,
@@ -20,7 +20,7 @@ from ceur_graph.datamodel.item import (
     Statement,
     WikibaseReferenceBase,
 )
-from ceur_graph.datamodel.utils import make_partial_model
+from wbforms.datamodel.utils import make_partial_model
 
 WIKIBASE_REFERENCE_CLASS_NAME = "WikibaseReference"
 SUPPORTS_REFERENCES_ANNOTATION = "supports_references"
@@ -89,7 +89,7 @@ def _slot_annotations(view: SchemaView, slot_name: str, class_name: str, induced
 
 
 def _is_statement_subject(anns: dict[str, str]) -> bool:
-    val = anns.get("ceur_dev_id", "")
+    val = anns.get("wikibase_id", "")
     parts = val.split("/")
     return len(parts) >= 2 and parts[-2] == "statement"
 
@@ -132,8 +132,8 @@ def _build_field_def(
         py_type = list[py_type]
 
     extra: dict[str, Any] = {}
-    if ceur_dev_id := anns.get("ceur_dev_id"):
-        extra[CEUR_DEV_ID] = ceur_dev_id
+    if wikibase_id := anns.get("wikibase_id"):
+        extra[WIKIBASE_ID] = wikibase_id
     if wd_id := anns.get("wikidata_id"):
         extra[WIKIDATA_ID] = wd_id
     if wb_type := anns.get("wikibase_type"):
@@ -248,7 +248,7 @@ def generate_models(schema_path: Path) -> dict[str, type]:
         _raw_enforce = _ann_dict(cls_def.annotations).get("enforce_unknown_stmt_name", False)
         enforce_stmt_name = _raw_enforce is True or (isinstance(_raw_enforce, str) and _raw_enforce.lower() == "true")
         if model_title or enforce_stmt_name:
-            extra_attrs: dict = {"__module__": "ceur_graph.codegen"}
+            extra_attrs: dict = {"__module__": "wbforms.codegen"}
             if model_title:
                 extra_attrs["model_config"] = ConfigDict(title=model_title)
             if enforce_stmt_name:
@@ -258,19 +258,19 @@ def generate_models(schema_path: Path) -> dict[str, type]:
         base_model = create_model(
             f"{class_name}Base",
             __base__=base_cls,
-            __module__="ceur_graph.codegen",
+            __module__="wbforms.codegen",
             **field_defs,
         )
 
         create_model_cls = create_model(
             f"{class_name}Create",
             __base__=base_model,
-            __module__="ceur_graph.codegen",
+            __module__="wbforms.codegen",
         )
 
         update_model = make_partial_model(create_model_cls, f"{class_name}Update")
 
-        read_model = type(class_name, (base_model, read_extra_cls), {"__module__": "ceur_graph.codegen"})
+        read_model = type(class_name, (base_model, read_extra_cls), {"__module__": "wbforms.codegen"})
 
         models[f"{class_name}Base"] = base_model
         models[f"{class_name}Create"] = create_model_cls

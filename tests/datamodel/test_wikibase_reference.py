@@ -2,8 +2,8 @@
 
 import unittest
 
-from ceur_graph.codegen import get_models
-from ceur_graph.datamodel.item import CEUR_DEV_ID
+from wbforms.codegen import get_models
+from wbforms.datamodel.item import WIKIBASE_ID
 
 
 class TestWikibaseReferenceModel(unittest.TestCase):
@@ -22,14 +22,14 @@ class TestWikibaseReferenceModel(unittest.TestCase):
     def test_get_reference_fields_identifies_all(self):
         """get_reference_fields() returns every slot annotated with /reference/Pxx."""
         self.assertEqual(
-            sorted(self.WikibaseReference.get_reference_fields(CEUR_DEV_ID)),
+            sorted(self.WikibaseReference.get_reference_fields(WIKIBASE_ID)),
             ["reference_url", "retrieved", "stated_in"],
         )
 
     def test_property_ids_are_reference_path(self):
         """Each slot uses the /reference/ path segment, not /qualifier/ or /statement/."""
-        for fname in self.WikibaseReference.get_reference_fields(CEUR_DEV_ID):
-            prop_url = self.WikibaseReference.model_fields[fname].json_schema_extra[CEUR_DEV_ID]
+        for fname in self.WikibaseReference.get_reference_fields(WIKIBASE_ID):
+            prop_url = self.WikibaseReference.model_fields[fname].json_schema_extra[WIKIBASE_ID]
             self.assertIn("/reference/", prop_url, f"{fname} should use /reference/ path")
 
 

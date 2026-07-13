@@ -9,8 +9,8 @@ import unittest
 from wikibaseintegrator import WikibaseIntegrator
 from wikibaseintegrator.entities import ItemEntity
 
-from ceur_graph.codegen import get_models
-from ceur_graph.wbgenerator import (
+from wbforms.codegen import get_models
+from wbforms.wbgenerator import (
     StatementNotFoundError,
     create_item_from_model,
     create_qualified_statement_from_model,

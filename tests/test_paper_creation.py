@@ -8,10 +8,11 @@ from pydantic import AnyHttpUrl
 from wikibaseintegrator import datatypes
 from wikibaseintegrator.entities import ItemEntity
 
-from ceur_graph.ceur_dev import CeurDev
-from ceur_graph.codegen import Paper
-from ceur_graph.datamodel.auth import WikibaseBotAuth
 from tests.settings import Settings
+from wbforms.ceur_dev import CeurDev
+from wbforms.codegen import Paper
+from wbforms.datamodel.auth import WikibaseBotAuth
+from wbforms.datamodel.item import WIKIBASE_ID
 
 
 class TestPaperCreation(unittest.TestCase):
@@ -79,13 +80,11 @@ class TestPaperCreation(unittest.TestCase):
         item.labels.set("en", paper.label)
         item.descriptions.set("en", paper.description)
         if paper.title:
-            title_pid = self.ceur_dev.get_entity_id(
-                Paper.model_fields.get("title").json_schema_extra.get("ceur-dev_id")
-            )
+            title_pid = self.ceur_dev.get_entity_id(Paper.model_fields.get("title").json_schema_extra.get(WIKIBASE_ID))
             title = datatypes.MonolingualText(language="en", text=paper.title, prop_nr=title_pid)
             item.claims.add(title)
         full_work_available_at_url_pid = self.ceur_dev.get_entity_id(
-            Paper.model_fields.get("full_work_available_at_url").json_schema_extra.get("ceur-dev_id")
+            Paper.model_fields.get("full_work_available_at_url").json_schema_extra.get(WIKIBASE_ID)
         )
         item.claims.add(
             datatypes.URL(
@@ -95,7 +94,7 @@ class TestPaperCreation(unittest.TestCase):
         )
         proceedings_qid = self.ceur_dev.get_entity_id(paper.published_in)
         published_in_pid = self.ceur_dev.get_entity_id(
-            Paper.model_fields.get("published_in").json_schema_extra.get("ceur-dev_id")
+            Paper.model_fields.get("published_in").json_schema_extra.get(WIKIBASE_ID)
         )
         item.claims.add(datatypes.Item(value=proceedings_qid, prop_nr=published_in_pid))
         return item

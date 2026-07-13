@@ -4,7 +4,7 @@ import unittest
 
 from wikibaseintegrator import datatypes
 
-from ceur_graph.wbgenerator import _infer_time_precision, get_claim
+from wbforms.wbgenerator import _infer_time_precision, get_claim
 
 
 class TestInferTimePrecision(unittest.TestCase):

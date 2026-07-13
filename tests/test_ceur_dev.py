@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from ceur_graph.ceur_dev import CeurDev
+from wbforms.ceur_dev import CeurDev
 
 
 class TestCeurDev(TestCase):

@@ -2,7 +2,7 @@ import unittest
 
 from fastapi.testclient import TestClient
 
-from ceur_graph.main import app
+from wbforms.main import app
 
 client = TestClient(app)
 

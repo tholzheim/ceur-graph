@@ -6,7 +6,7 @@ from wikibaseintegrator import datatypes
 from wikibaseintegrator.wbi_enums import WikibaseSnakType
 
 WIKIBASE_TYPE = "wikibase_type"
-CEUR_DEV_ID = "CEUR_DEV_ID"
+WIKIBASE_ID = "WIKIBASE_ID"
 WIKIDATA_ID = "WIKIDATA_ID"
 
 
@@ -37,14 +37,14 @@ class ItemBase(_EmptyStringsMixin):
         Field(
             description="Qid of the paper",
             pattern=r"Q\d+",
-            json_schema_extra={CEUR_DEV_ID: "rdf:subject"},
+            json_schema_extra={WIKIBASE_ID: "rdf:subject"},
         ),
     ]
 
 
 class EntityBase(_EmptyStringsMixin):
-    label: Annotated[str, Field(json_schema_extra={CEUR_DEV_ID: "rdfs:label"})]
-    description: Annotated[str, Field(json_schema_extra={CEUR_DEV_ID: "schema:description"})]
+    label: Annotated[str, Field(json_schema_extra={WIKIBASE_ID: "rdfs:label"})]
+    description: Annotated[str, Field(json_schema_extra={WIKIBASE_ID: "schema:description"})]
 
 
 class StatementBase(_EmptyStringsMixin):
@@ -94,7 +94,7 @@ class StatementBase(_EmptyStringsMixin):
 
 
 class Statement(StatementBase):
-    statement_id: Annotated[str, Field(pattern=r"Q\d+", json_schema_extra={CEUR_DEV_ID: "rdf:subject"})]
+    statement_id: Annotated[str, Field(pattern=r"Q\d+", json_schema_extra={WIKIBASE_ID: "rdf:subject"})]
 
 
 class ExtractedStatement(StatementBase):
@@ -107,7 +107,7 @@ class ExtractedStatement(StatementBase):
         str | None,
         Field(
             json_schema_extra={
-                CEUR_DEV_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P91",
+                WIKIBASE_ID: "https://ceur-dev.wikibase.cloud/prop/qualifier/P91",
                 WIKIBASE_TYPE: datatypes.String.DTYPE,
             }
         ),
@@ -118,7 +118,7 @@ class ExtractedStatement(StatementBase):
         """
         Check if the object_named_as field must be set
         """
-        statement_object_field = self.get_statement_subject(CEUR_DEV_ID)
+        statement_object_field = self.get_statement_subject(WIKIBASE_ID)
         statement_object_value = getattr(self, statement_object_field)
         if statement_object_value == WikibaseSnakType.UNKNOWN_VALUE.value and self.object_named_as is None:
             raise ValueError(
@@ -132,7 +132,7 @@ class ExtractedStatement(StatementBase):
         if None in [self.object_named_as, other_object_named_as]:
             if isinstance(other, str):
                 return False
-            stmt_object_field = self.get_statement_subject(CEUR_DEV_ID)
+            stmt_object_field = self.get_statement_subject(WIKIBASE_ID)
             return getattr(self, stmt_object_field) == getattr(other, stmt_object_field)
         else:
             return self.object_named_as == other_object_named_as

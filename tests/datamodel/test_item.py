@@ -2,7 +2,7 @@ import unittest
 
 from wikibaseintegrator.wbi_enums import WikibaseSnakType
 
-from ceur_graph.codegen import SubjectBase
+from wbforms.codegen import SubjectBase
 
 
 class TestExtractedStatement(unittest.TestCase):

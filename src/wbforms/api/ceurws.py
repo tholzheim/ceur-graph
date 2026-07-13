@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter
 
-from ceur_graph.ceur_dev import CeurDev
+from wbforms.ceur_dev import CeurDev
 
 logger = logging.getLogger(__name__)
 

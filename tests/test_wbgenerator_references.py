@@ -2,8 +2,8 @@
 
 import unittest
 
-from ceur_graph.codegen import get_models
-from ceur_graph.wbgenerator import (
+from wbforms.codegen import get_models
+from wbforms.wbgenerator import (
     add_references_to_statement,
     create_qualified_statement_from_model,
     get_model_from_qualified_statement,

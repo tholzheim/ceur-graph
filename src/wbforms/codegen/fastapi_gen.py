@@ -9,8 +9,8 @@ from fastapi import APIRouter, Body, Depends
 from pydantic import Field
 from starlette import status
 
-from ceur_graph.api.auth import get_current_user
-from ceur_graph.api.utils import (
+from wbforms.api.auth import get_current_user
+from wbforms.api.utils import (
     handle_get_all_statements,
     handle_get_item_by_id,
     handle_get_statement_by_id,
@@ -22,10 +22,10 @@ from ceur_graph.api.utils import (
     handle_statement_deletion_by_object,
     handle_statement_update,
 )
-from ceur_graph.ceur_dev import CeurDev
+from wbforms.session import WikibaseSession
 
 _QID = Annotated[str, Field(pattern=r"Q\d+")]
-_AUTH = Annotated[CeurDev, Depends(get_current_user)]
+_AUTH = Annotated[WikibaseSession, Depends(get_current_user)]
 _REASON = Annotated[str | None, Field(description="Reason for deletion")]
 
 
@@ -65,22 +65,22 @@ def _item_router(ep: dict, models: dict) -> APIRouter:
     )
 
     def _create(**kw):
-        return handle_item_creation(wikibase=kw["ceur_dev"], model_obj=kw["body"], target_model=ReadModel)
+        return handle_item_creation(wikibase=kw["session"], model_obj=kw["body"], target_model=ReadModel)
 
     router.post("/", response_model=ReadModel, status_code=status.HTTP_201_CREATED)(
-        _make_handler([("body", Annotated[CreateModel, Body()]), ("ceur_dev", _AUTH)], _create)
+        _make_handler([("body", Annotated[CreateModel, Body()]), ("session", _AUTH)], _create)
     )
 
     def _get(**kw):
-        return handle_get_item_by_id(wikibase=kw["ceur_dev"], item_id=kw[id_param], target_model=ReadModel)
+        return handle_get_item_by_id(wikibase=kw["session"], item_id=kw[id_param], target_model=ReadModel)
 
     router.get(f"/{{{id_param}}}", response_model=ReadModel, status_code=status.HTTP_200_OK)(
-        _make_handler([(id_param, str), ("ceur_dev", _AUTH)], _get)
+        _make_handler([(id_param, str), ("session", _AUTH)], _get)
     )
 
     def _update(**kw):
         return handle_item_update(
-            wikibase=kw["ceur_dev"],
+            wikibase=kw["session"],
             item_id=kw[id_param],
             model_obj=kw["body"],
             target_model=ReadModel,
@@ -88,21 +88,21 @@ def _item_router(ep: dict, models: dict) -> APIRouter:
 
     router.put(f"/{{{id_param}}}", response_model=ReadModel, status_code=status.HTTP_200_OK)(
         _make_handler(
-            [(id_param, _QID), ("body", Annotated[UpdateModel, Body()]), ("ceur_dev", _AUTH)],
+            [(id_param, _QID), ("body", Annotated[UpdateModel, Body()]), ("session", _AUTH)],
             _update,
         )
     )
 
     def _delete(**kw):
         return handle_item_deletion(
-            wikibase=kw["ceur_dev"],
+            wikibase=kw["session"],
             item_id=kw[id_param],
             reason=kw.get("reason"),
             target_model=ReadModel,
         )
 
     router.delete(f"/{{{id_param}}}", status_code=status.HTTP_204_NO_CONTENT)(
-        _make_handler([(id_param, str), ("ceur_dev", _AUTH), ("reason", _REASON, None)], _delete)
+        _make_handler([(id_param, str), ("session", _AUTH), ("reason", _REASON, None)], _delete)
     )
 
     return router
@@ -126,15 +126,15 @@ def _statement_router(ep: dict, models: dict) -> APIRouter:
     )
 
     def _get_all(**kw):
-        return handle_get_all_statements(wikibase=kw["ceur_dev"], item_id=kw[parent_param], target_model=ReadModel)
+        return handle_get_all_statements(wikibase=kw["session"], item_id=kw[parent_param], target_model=ReadModel)
 
     router.get("", response_model=list[ReadModel], status_code=status.HTTP_200_OK)(
-        _make_handler([(parent_param, _QID), ("ceur_dev", _AUTH)], _get_all)
+        _make_handler([(parent_param, _QID), ("session", _AUTH)], _get_all)
     )
 
     def _create(**kw):
         return handle_statement_creation(
-            wikibase=kw["ceur_dev"],
+            wikibase=kw["session"],
             item_id=kw[parent_param],
             model_obj=kw["body"],
             target_model=ReadModel,
@@ -142,7 +142,7 @@ def _statement_router(ep: dict, models: dict) -> APIRouter:
 
     router.post("/", response_model=ReadModel, status_code=status.HTTP_200_OK)(
         _make_handler(
-            [(parent_param, _QID), ("ceur_dev", _AUTH), ("body", Annotated[CreateModel, Body()])],
+            [(parent_param, _QID), ("session", _AUTH), ("body", Annotated[CreateModel, Body()])],
             _create,
         )
     )
@@ -151,19 +151,19 @@ def _statement_router(ep: dict, models: dict) -> APIRouter:
 
         def _get_by_id(**kw):
             return handle_get_statement_by_id(
-                wikibase=kw["ceur_dev"],
+                wikibase=kw["session"],
                 item_id=kw[parent_param],
                 statement_id=kw["statement_id"],
                 target_model=ReadModel,
             )
 
         router.get("/{statement_id}", response_model=ReadModel, status_code=status.HTTP_200_OK)(
-            _make_handler([(parent_param, _QID), ("statement_id", str), ("ceur_dev", _AUTH)], _get_by_id)
+            _make_handler([(parent_param, _QID), ("statement_id", str), ("session", _AUTH)], _get_by_id)
         )
 
     def _update(**kw):
         return handle_statement_update(
-            wikibase=kw["ceur_dev"],
+            wikibase=kw["session"],
             item_id=kw[parent_param],
             statement_id=kw["statement_id"],
             model_obj=kw["body"],
@@ -176,7 +176,7 @@ def _statement_router(ep: dict, models: dict) -> APIRouter:
                 (parent_param, _QID),
                 ("statement_id", str),
                 ("body", Annotated[UpdateModel, Body()]),
-                ("ceur_dev", _AUTH),
+                ("session", _AUTH),
             ],
             _update,
         )
@@ -184,21 +184,21 @@ def _statement_router(ep: dict, models: dict) -> APIRouter:
 
     def _delete_by_id(**kw):
         return handle_statement_deletion_by_id(
-            wikibase=kw["ceur_dev"],
+            wikibase=kw["session"],
             item_id=kw[parent_param],
             statement_id=kw["statement_id"],
             model=ReadModel,
         )
 
     router.delete("/{statement_id}", status_code=status.HTTP_204_NO_CONTENT)(
-        _make_handler([(parent_param, _QID), ("statement_id", str), ("ceur_dev", _AUTH)], _delete_by_id)
+        _make_handler([(parent_param, _QID), ("statement_id", str), ("session", _AUTH)], _delete_by_id)
     )
 
     if has_delete_by_object:
 
         def _delete_by_object(**kw):
             return handle_statement_deletion_by_object(
-                wikibase=kw["ceur_dev"],
+                wikibase=kw["session"],
                 item_id=kw[parent_param],
                 object_named_as=kw["object_named_as"],
                 model=BaseModel,
@@ -206,7 +206,7 @@ def _statement_router(ep: dict, models: dict) -> APIRouter:
 
         router.delete("/", status_code=status.HTTP_204_NO_CONTENT)(
             _make_handler(
-                [(parent_param, _QID), ("object_named_as", str), ("ceur_dev", _AUTH)],
+                [(parent_param, _QID), ("object_named_as", str), ("session", _AUTH)],
                 _delete_by_object,
             )
         )
