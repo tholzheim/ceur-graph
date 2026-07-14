@@ -4,12 +4,12 @@ from pathlib import Path
 from typing import get_args
 
 import httpx
-import yaml
 from fastapi import APIRouter, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from wbforms.codegen import get_models
+from wbforms.codegen.endpoints import derive_endpoints
 from wbforms.datamodel.item import WIKIBASE_ID, WIKIBASE_TYPE, StatementBase, WikibaseReferenceBase
 from wbforms.settings import get_settings
 from wbforms.wbgenerator import _is_list_annotation, _wikibase_reference_class, get_statement_field_type
@@ -133,14 +133,14 @@ def _build_entity_schema(
         stmt_type = get_statement_field_type(finfo.annotation)
         if stmt_type is not None:
             stmt_name = stmt_type.__name__
-            # Find matching endpoint
+            # The derived statement endpoint is linked to exactly this (entity, slot) pair.
             stmt_endpoint = next(
                 (
                     ep
                     for ep in endpoints
-                    if ep.get("model") == stmt_name
-                    and ep.get("type") == "statement"
-                    and ep.get("parent_param", "").startswith(entity_name[0].lower())
+                    if ep.get("type") == "statement"
+                    and ep.get("parent_model") == entity_name
+                    and ep.get("slot") == fname
                 ),
                 None,
             )
@@ -194,8 +194,7 @@ def get_public_config() -> dict:
 @router.get("/api/schema/entities")
 def get_schema_entities() -> list[dict]:
     """Return schema metadata for all item-type entities, suitable for form generation."""
-    raw = yaml.safe_load(get_settings().schema_path.read_text(encoding="utf-8"))
-    endpoints: list[dict] = raw.get("endpoints", [])
+    endpoints = derive_endpoints(get_settings().schema_path)
 
     item_endpoints = [ep for ep in endpoints if ep.get("type") == "item"]
     all_models = get_models()

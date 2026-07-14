@@ -1,10 +1,9 @@
-"""Generate FastAPI routers from the endpoints section of the LinkML schema."""
+"""Generate FastAPI routers from the endpoint definitions derived from the LinkML schema."""
 
 from inspect import Parameter, Signature
 from pathlib import Path
 from typing import Annotated, Any
 
-import yaml
 from fastapi import APIRouter, Body, Depends
 from pydantic import Field
 from starlette import status
@@ -22,6 +21,7 @@ from wbforms.api.utils import (
     handle_statement_deletion_by_object,
     handle_statement_update,
 )
+from wbforms.codegen.endpoints import derive_endpoints
 from wbforms.session import WikibaseSession
 
 _QID = Annotated[str, Field(pattern=r"Q\d+")]
@@ -215,16 +215,12 @@ def _statement_router(ep: dict, models: dict) -> APIRouter:
 
 
 def generate_routers(schema_path: Path, models: dict) -> list[APIRouter]:
-    """Parse the endpoints section of the schema YAML and return a list of APIRouters."""
-    raw = yaml.safe_load(schema_path.read_text(encoding="utf-8"))
-    endpoints: list[dict] = raw.get("endpoints", [])
-
+    """Derive the endpoint definitions from the schema classes and return a list of APIRouters."""
     routers: list[APIRouter] = []
-    for ep in endpoints:
-        ep_type = ep.get("type", "item")
-        if ep_type == "item":
+    for ep in derive_endpoints(schema_path):
+        if ep["type"] == "item":
             routers.append(_item_router(ep, models))
-        elif ep_type == "statement":
+        elif ep["type"] == "statement":
             routers.append(_statement_router(ep, models))
 
     return routers

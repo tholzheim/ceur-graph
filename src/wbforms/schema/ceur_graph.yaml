@@ -324,6 +324,7 @@ classes:
       python_base: extracted_statement
       enforce_unknown_stmt_name: true
       supports_references: true
+      has_delete_by_object: true
     slots:
       - scholar_id
       - series_ordinal
@@ -350,6 +351,7 @@ classes:
       model_title: Subject
       enforce_unknown_stmt_name: true
       supports_references: true
+      has_delete_by_object: true
     slots:
       - subject_id
       - object_named_as
@@ -357,6 +359,7 @@ classes:
   Reference:
     annotations:
       python_base: extracted_statement
+      has_get_by_id: true
     slots:
       - reference_id
       - series_ordinal
@@ -371,58 +374,3 @@ classes:
           wikibase_id: "https://ceur-dev.wikibase.cloud/prop/qualifier/P5"
           wikidata_id: "http://www.wikidata.org/prop/qualifier/P1476"
           wikibase_type: monolingualtext
-
-# Custom section: FastAPI endpoint definitions (not parsed by linkml-runtime)
-endpoints:
-  - model: Paper
-    type: item
-    prefix: /papers
-    tag: papers
-    id_param: paper_id
-
-  - model: Volume
-    type: item
-    prefix: /volumes
-    tag: Volumes
-    id_param: volume_id
-
-  - model: ScholarlyArticle
-    type: item
-    prefix: /scholarlyarticles
-    tag: Scholarly Article
-    id_param: scholarlyarticle_id
-
-  - model: ScholarSignature
-    type: statement
-    prefix: /papers/{paper_id}/authors
-    tag: AuthorSignature
-    parent_param: paper_id
-    has_delete_by_object: true
-
-  - model: Subject
-    type: statement
-    prefix: /papers/{paper_id}/subjects
-    tag: Paper Subjects
-    parent_param: paper_id
-    has_delete_by_object: true
-
-  - model: Subject
-    type: statement
-    prefix: /volumes/{volume_id}/subjects
-    tag: Volume Subjects
-    parent_param: volume_id
-    has_delete_by_object: true
-
-  - model: EditorSignature
-    type: statement
-    prefix: /volumes/{volume_id}/editors
-    tag: EditorSignature
-    parent_param: volume_id
-    has_delete_by_object: true
-
-  - model: Reference
-    type: statement
-    prefix: /papers/{paper_id}/references
-    tag: References
-    parent_param: paper_id
-    has_get_by_id: true
