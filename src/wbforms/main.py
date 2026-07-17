@@ -8,7 +8,7 @@ from fastapi import Depends, FastAPI
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 
-from wbforms.api import ceurws, wd_migrate
+from wbforms.api import wd_migrate
 from wbforms.api.auth import login_user
 from wbforms.api.frontend import router as frontend_router
 from wbforms.api.oauth import router as oauth_router
@@ -46,7 +46,6 @@ for router in get_routers():
     app.include_router(router)
 
 app.include_router(wd_migrate.router)
-app.include_router(ceurws.router)
 app.include_router(oauth_router)
 
 # Frontend router last so it doesn't shadow API routes
