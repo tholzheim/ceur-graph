@@ -71,11 +71,12 @@
 
   <rect x="705" y="125" width="200" height="130" rx="6" fill="#f8fafc" stroke="#15803d"/>
   <text x="715" y="145" font-size="13" font-weight="600" fill="#1f2937">REST CRUD API</text>
-  <text x="715" y="165" font-size="11.5" fill="#1f2937">/paper &#183; /volume</text>
-  <text x="715" y="181" font-size="11.5" fill="#1f2937">/paper/{id}/authors &#8230;</text>
-  <text x="715" y="201" font-size="11.5" fill="#1f2937">OpenAPI docs at /docs</text>
-  <text x="715" y="221" font-size="11.5" fill="#1f2937">login: OAuth or</text>
-  <text x="715" y="237" font-size="11.5" fill="#1f2937">POST /token (bot)</text>
+  <text x="715" y="165" font-size="11.5" fill="#1f2937">/foo &#183; /foo/{foo_id}/&lt;slot&gt;</text>
+  <text x="715" y="180" font-size="11" fill="#6b7280">routes derived from the</text>
+  <text x="715" y="194" font-size="11" fill="#6b7280">loaded schema, e.g. /paper</text>
+  <text x="715" y="212" font-size="11.5" fill="#1f2937">OpenAPI docs at /docs</text>
+  <text x="715" y="230" font-size="11.5" fill="#1f2937">login: OAuth or</text>
+  <text x="715" y="246" font-size="11.5" fill="#1f2937">POST /token (bot)</text>
 
   <rect x="705" y="270" width="200" height="130" rx="6" fill="#f8fafc" stroke="#15803d"/>
   <text x="715" y="290" font-size="13" font-weight="600" fill="#1f2937">form metadata</text>
