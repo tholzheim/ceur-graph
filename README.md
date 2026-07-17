@@ -14,6 +14,15 @@ Bundled use cases:
 * Wikibase integration: reads and writes via WikibaseIntegrator and SPARQL; works with wikibase.cloud and classic MediaWiki deployments.
 * OAuth 2.0 / 1.0a and bot-password login.
 
+## Documentation
+
+![Generation pipeline: LinkML schema → startup codegen → FastAPI service → Wikibase / browser form](docs/images/generation-pipeline.svg)
+
+* [Architecture](docs/architecture.md) — how the endpoints and forms are generated from the LinkML schema.
+* [Schema authoring guide](docs/schema-authoring.md) — how to define a LinkML schema that yields a proper data-entry form (annotations, classes, endpoints, worked example).
+* [Configuration reference](docs/configuration.md) — all settings, schema selection, and authentication setup.
+* [Update behavior](docs/update-behavior.md) — exact semantics of the item/statement update path.
+
 ## Usage
 To run the FastAPI application, execute the following command:
 ```shell
@@ -69,9 +78,24 @@ Wikibase.
 | `WBFORMS_APP_BASE_URL` | Public base URL of the SPA | `http://localhost:8000/` |
 | `WBFORMS_SESSION_TTL_MINUTES` | Session lifetime | `60` |
 | `WBFORMS_SCHEMA_PATH` | LinkML schema file driving model + router codegen | bundled `ceur_graph.yaml` |
+| `WBFORMS_ENV_FILE` | Alternative env file to load instead of `.env` (e.g. `.env.factgrid`) | `.env` |
 
 A ready-to-edit template is provided at `.env.example` — copy it to `.env`
-and adjust the values for your deployment.
+and adjust the values for your deployment. The full reference, including
+authentication setup and deployment caveats, is in
+[docs/configuration.md](docs/configuration.md).
+
+The `.env` file is looked up in the project root as well as the current
+working directory, so the server finds it regardless of where it is
+launched from. If no env file is found, the service falls back to the
+built-in ceur-dev defaults — the startup log reports which env file(s)
+were loaded and which Wikibase instance is targeted. To switch between
+bundled configurations without copying files, point `WBFORMS_ENV_FILE`
+at the desired file, e.g.:
+
+```shell
+WBFORMS_ENV_FILE=.env.factgrid uv run fastapi dev src/wbforms/main.py
+```
 
 For `OAUTH_VERSION=2.0` (default — wikibase.cloud-hosted instances such as
 ceur-dev), register an OAuth 2.0 consumer (confidential client,

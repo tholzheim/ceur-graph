@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1160 640" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b949e"/>
+    </marker>
+  </defs>
+
+  <text x="580" y="40" text-anchor="middle" font-size="20" font-weight="600" fill="#8b949e">wbforms: from LinkML schema to endpoints and forms</text>
+
+  <!-- Column A: LinkML schema -->
+  <rect x="20" y="80" width="250" height="440" rx="10" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="145" y="108" text-anchor="middle" font-size="15" font-weight="600" fill="#1e3a8a">LinkML schema (YAML)</text>
+
+  <rect x="35" y="125" width="220" height="100" rx="6" fill="#f8fafc" stroke="#1e40af"/>
+  <text x="45" y="145" font-size="13" font-weight="600" fill="#1f2937">classes</text>
+  <text x="45" y="163" font-size="11.5" fill="#1f2937">annotation python_base:</text>
+  <text x="53" y="180" font-size="11.5" fill="#1f2937">entity_item</text>
+  <text x="53" y="196" font-size="11.5" fill="#1f2937">extracted_statement</text>
+  <text x="53" y="212" font-size="11.5" fill="#1f2937">wikibase_reference</text>
+
+  <rect x="35" y="240" width="220" height="140" rx="6" fill="#f8fafc" stroke="#1e40af"/>
+  <text x="45" y="260" font-size="13" font-weight="600" fill="#1f2937">slots</text>
+  <text x="45" y="278" font-size="11.5" fill="#1f2937">wikibase_id = property IRI</text>
+  <text x="53" y="294" font-size="11.5" fill="#1f2937">/direct  /statement</text>
+  <text x="53" y="310" font-size="11.5" fill="#1f2937">/qualifier  /reference</text>
+  <text x="45" y="330" font-size="11.5" fill="#1f2937">wikibase_type &#183; range</text>
+  <text x="45" y="346" font-size="11.5" fill="#1f2937">multivalued &#183; required</text>
+  <text x="45" y="362" font-size="11.5" fill="#1f2937">pattern</text>
+
+  <rect x="35" y="395" width="220" height="105" rx="6" fill="#f8fafc" stroke="#1e40af"/>
+  <text x="45" y="415" font-size="13" font-weight="600" fill="#1f2937">endpoint options (optional)</text>
+  <text x="45" y="433" font-size="11.5" fill="#1f2937">endpoint_prefix &#183; _segment</text>
+  <text x="45" y="449" font-size="11.5" fill="#1f2937">endpoint_tag &#183; generate_endpoint</text>
+  <text x="45" y="465" font-size="11.5" fill="#1f2937">has_get_by_id</text>
+  <text x="45" y="481" font-size="11.5" fill="#1f2937">has_delete_by_object</text>
+
+  <!-- A -> B -->
+  <line x1="270" y1="250" x2="338" y2="250" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="304" y="230" text-anchor="middle" font-size="11" fill="#8b949e">read once</text>
+  <text x="304" y="243" text-anchor="middle" font-size="11" fill="#8b949e">at startup</text>
+
+  <!-- Column B: codegen -->
+  <rect x="340" y="80" width="280" height="340" rx="10" fill="#ede9fe" stroke="#6d28d9" stroke-width="1.5"/>
+  <text x="480" y="108" text-anchor="middle" font-size="15" font-weight="600" fill="#5b21b6">startup codegen</text>
+
+  <rect x="355" y="125" width="250" height="120" rx="6" fill="#f8fafc" stroke="#6d28d9"/>
+  <text x="365" y="145" font-size="13" font-weight="600" fill="#1f2937">generate_models()</text>
+  <text x="365" y="162" font-size="11" fill="#6b7280">codegen/pydantic_gen.py</text>
+  <text x="365" y="182" font-size="11.5" fill="#1f2937">Pydantic models per class:</text>
+  <text x="365" y="198" font-size="11.5" fill="#1f2937">FooCreate &#183; Foo &#183; FooUpdate</text>
+  <text x="365" y="214" font-size="11.5" fill="#1f2937">fields carry wikibase_id /</text>
+  <text x="365" y="230" font-size="11.5" fill="#1f2937">wikibase_type metadata</text>
+
+  <line x1="480" y1="245" x2="480" y2="283" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="355" y="285" width="250" height="115" rx="6" fill="#f8fafc" stroke="#6d28d9"/>
+  <text x="365" y="305" font-size="13" font-weight="600" fill="#1f2937">generate_routers()</text>
+  <text x="365" y="322" font-size="11" fill="#6b7280">codegen/fastapi_gen.py + endpoints.py</text>
+  <text x="365" y="342" font-size="11.5" fill="#1f2937">CRUD routes derived from item</text>
+  <text x="365" y="358" font-size="11.5" fill="#1f2937">classes + statement slots,</text>
+  <text x="365" y="374" font-size="11.5" fill="#1f2937">wired to shared handlers + auth</text>
+
+  <!-- B -> C -->
+  <line x1="620" y1="250" x2="688" y2="250" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="654" y="230" text-anchor="middle" font-size="11" fill="#8b949e">registered</text>
+  <text x="654" y="243" text-anchor="middle" font-size="11" fill="#8b949e">on the app</text>
+
+  <!-- Column C: FastAPI service -->
+  <rect x="690" y="80" width="230" height="340" rx="10" fill="#dcfce7" stroke="#15803d" stroke-width="1.5"/>
+  <text x="805" y="108" text-anchor="middle" font-size="15" font-weight="600" fill="#166534">FastAPI service</text>
+
+  <rect x="705" y="125" width="200" height="130" rx="6" fill="#f8fafc" stroke="#15803d"/>
+  <text x="715" y="145" font-size="13" font-weight="600" fill="#1f2937">REST CRUD API</text>
+  <text x="715" y="165" font-size="11.5" fill="#1f2937">/paper &#183; /volume</text>
+  <text x="715" y="181" font-size="11.5" fill="#1f2937">/paper/{id}/authors &#8230;</text>
+  <text x="715" y="201" font-size="11.5" fill="#1f2937">OpenAPI docs at /docs</text>
+  <text x="715" y="221" font-size="11.5" fill="#1f2937">login: OAuth or</text>
+  <text x="715" y="237" font-size="11.5" fill="#1f2937">POST /token (bot)</text>
+
+  <rect x="705" y="270" width="200" height="130" rx="6" fill="#f8fafc" stroke="#15803d"/>
+  <text x="715" y="290" font-size="13" font-weight="600" fill="#1f2937">form metadata</text>
+  <text x="715" y="307" font-size="11" fill="#6b7280">GET /api/schema/entities</text>
+  <text x="715" y="327" font-size="11.5" fill="#1f2937">field descriptors derived</text>
+  <text x="715" y="343" font-size="11.5" fill="#1f2937">from the generated models:</text>
+  <text x="715" y="359" font-size="11.5" fill="#1f2937">field_type &#183; wikibase_type</text>
+  <text x="715" y="375" font-size="11.5" fill="#1f2937">required &#183; statement_fields</text>
+
+  <!-- C -> Wikibase -->
+  <line x1="920" y1="190" x2="978" y2="190" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="978" y1="215" x2="920" y2="215" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="949" y="170" text-anchor="middle" font-size="11" fill="#8b949e">writes</text>
+  <text x="949" y="237" text-anchor="middle" font-size="11" fill="#8b949e">reads</text>
+
+  <!-- Wikibase -->
+  <rect x="980" y="120" width="160" height="150" rx="10" fill="#fef3c7" stroke="#b45309" stroke-width="1.5"/>
+  <text x="1060" y="148" text-anchor="middle" font-size="15" font-weight="600" fill="#92400e">Wikibase</text>
+  <text x="1060" y="172" text-anchor="middle" font-size="11.5" fill="#1f2937">items &#183; statements</text>
+  <text x="1060" y="188" text-anchor="middle" font-size="11.5" fill="#1f2937">qualifiers &#183; references</text>
+  <text x="1060" y="212" text-anchor="middle" font-size="11" fill="#6b7280">WikibaseIntegrator</text>
+  <text x="1060" y="227" text-anchor="middle" font-size="11" fill="#6b7280">+ SPARQL</text>
+  <text x="1060" y="250" text-anchor="middle" font-size="11" fill="#6b7280">e.g. CEUR-dev, FactGrid</text>
+
+  <!-- service <-> browser -->
+  <line x1="770" y1="420" x2="770" y2="468" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="850" y1="470" x2="850" y2="422" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="760" y="448" text-anchor="end" font-size="11" fill="#8b949e">form metadata</text>
+  <text x="860" y="448" font-size="11" fill="#8b949e">create / edit (JSON)</text>
+
+  <!-- Browser form -->
+  <rect x="690" y="470" width="230" height="150" rx="10" fill="#ffe4e6" stroke="#be123c" stroke-width="1.5"/>
+  <text x="805" y="498" text-anchor="middle" font-size="15" font-weight="600" fill="#9f1239">Browser form (SPA)</text>
+  <text x="705" y="522" font-size="11.5" fill="#1f2937">one widget per wikibase_type:</text>
+  <text x="715" y="540" font-size="11.5" fill="#1f2937">item &#8594; entity autocomplete</text>
+  <text x="715" y="556" font-size="11.5" fill="#1f2937">time &#8594; date picker</text>
+  <text x="715" y="572" font-size="11.5" fill="#1f2937">quantity &#8594; number input</text>
+  <text x="715" y="588" font-size="11.5" fill="#1f2937">url / string &#8594; text input</text>
+  <text x="705" y="608" font-size="11.5" fill="#1f2937">+ statement &amp; reference editors</text>
+</svg>
