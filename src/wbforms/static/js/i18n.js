@@ -62,6 +62,10 @@ const messages = {
     commit_op_remove: "Remove",
     commit_cancel: "Cancel",
     commit_confirm: "Confirm & Write to Wikibase",
+    commit_missing_required: "Mandatory fields are still empty: {fields}",
+    commit_missing_required_block:
+      "Cannot write: mandatory fields are missing: {fields}",
+    commit_incomplete_ack: "Write anyway — the item will remain incomplete",
 
     stmt_loading: "Loading…",
     stmt_empty: "No entries yet.",
@@ -87,6 +91,7 @@ const messages = {
     stmt_add_source: "Add source",
     stmt_remove_source: "Remove",
     stmt_source_count: "{count} source(s) attached",
+    stmt_missing_required: "Mandatory fields are missing: {fields}",
 
     field_add_item: "Add",
 
@@ -148,6 +153,11 @@ const messages = {
     commit_op_remove: "Entfernen",
     commit_cancel: "Abbrechen",
     commit_confirm: "Bestätigen & in Wikibase schreiben",
+    commit_missing_required: "Pflichtfelder sind noch leer: {fields}",
+    commit_missing_required_block:
+      "Speichern nicht möglich: Pflichtfelder fehlen: {fields}",
+    commit_incomplete_ack:
+      "Trotzdem speichern — der Eintrag bleibt unvollständig",
 
     stmt_loading: "Wird geladen…",
     stmt_empty: "Noch keine Einträge.",
@@ -173,6 +183,7 @@ const messages = {
     stmt_add_source: "Quelle hinzufügen",
     stmt_remove_source: "Entfernen",
     stmt_source_count: "{count} Quelle(n) hinterlegt",
+    stmt_missing_required: "Pflichtfelder fehlen: {fields}",
 
     field_add_item: "Hinzufügen",
 

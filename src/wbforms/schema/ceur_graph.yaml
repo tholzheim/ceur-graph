@@ -248,6 +248,10 @@ slots:
     multivalued: true
     inlined_as_list: true
 
+  description:
+    range: string
+    required: false
+
 classes:
   Paper:
     annotations:

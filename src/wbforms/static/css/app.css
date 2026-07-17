@@ -521,6 +521,15 @@ label {
   padding: 0.6rem 0.9rem;
   margin-bottom: 0.75rem;
 }
+.warning-banner {
+  background: #fff3cd;
+  color: #856404;
+  border-radius: var(--border-radius);
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.75rem;
+}
+.warning-banner p { margin-bottom: 0.4rem; }
+.warning-banner label { color: inherit; }
 
 .spinner {
   display: inline-block;

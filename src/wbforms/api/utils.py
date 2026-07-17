@@ -40,9 +40,9 @@ def handle_get_item_by_id(wikibase: Wikibase, item_id: str, target_model: type[I
     """
     try:
         item: ItemEntity = wikibase.get_item(item_id)
+        model = get_model_from_item(item, target_model)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
-    model = get_model_from_item(item, target_model)
     return model
 
 

@@ -20,10 +20,17 @@ from wbforms.datamodel.item import (
     Statement,
     WikibaseReferenceBase,
 )
-from wbforms.datamodel.utils import make_partial_model
+from wbforms.datamodel.utils import make_field_optional, make_partial_model
 
 WIKIBASE_REFERENCE_CLASS_NAME = "WikibaseReference"
 SUPPORTS_REFERENCES_ANNOTATION = "supports_references"
+
+# Term slots an entity_item class may declare to control requiredness of the
+# label/description inherited from EntityBase. Maps slot name → fixed sentinel.
+ENTITY_TERM_SLOTS: dict[str, str] = {
+    "label": "rdfs:label",
+    "description": "schema:description",
+}
 
 RANGE_TO_PYTHON: dict[str, Any] = {
     "string": str,
@@ -157,6 +164,33 @@ def _build_field_def(
         return py_type | None, Field(default=None, **field_kwargs)
 
 
+def _build_term_field_def(slot_name: str, induced, anns: dict[str, str], class_name: str) -> tuple[Any, Any]:
+    """Return (python_type, FieldInfo) for a declared `label`/`description` term slot.
+
+    Declaring the slot lets the schema decide requiredness via `required:`; the Wikibase
+    mapping stays fixed to the term sentinel (labels/descriptions are terms, not claims).
+    """
+    sentinel = ENTITY_TERM_SLOTS[slot_name]
+    wikibase_id = anns.get("wikibase_id")
+    if wikibase_id and wikibase_id != sentinel:
+        raise ValueError(
+            f"{class_name}.{slot_name}: the {slot_name} slot maps to {sentinel} and "
+            f"must not carry a wikibase_id annotation ({wikibase_id!r})"
+        )
+    if induced.multivalued:
+        raise ValueError(f"{class_name}.{slot_name}: the {slot_name} slot must not be multivalued")
+
+    field_kwargs: dict[str, Any] = {"json_schema_extra": {WIKIBASE_ID: sentinel}}
+    if induced.pattern:
+        field_kwargs["pattern"] = induced.pattern
+    if induced.description:
+        field_kwargs["description"] = str(induced.description)
+
+    if induced.required:
+        return str, Field(default=..., **field_kwargs)
+    return str | None, Field(default=None, **field_kwargs)
+
+
 def _topological_order(view: SchemaView) -> list[str]:
     """Return class names in dependency order (parents and slot-range classes before dependents)."""
     visited: set[str] = set()
@@ -227,6 +261,13 @@ def generate_models(schema_path: Path) -> dict[str, type]:
         for slot_name in slots_to_gen:
             induced = view.induced_slot(slot_name, class_name)
             anns = _slot_annotations(view, slot_name, class_name, induced)
+
+            # Declared label/description term slot: overrides the required field
+            # inherited from EntityBase so the schema controls requiredness.
+            if python_base_key == "entity_item" and slot_name in ENTITY_TERM_SLOTS:
+                field_defs[slot_name] = _build_term_field_def(slot_name, induced, anns, class_name)
+                continue
+
             is_req = bool(induced.required)
             is_stmt_subj = _is_statement_subject(anns)
             if is_stmt_subj:
@@ -270,7 +311,18 @@ def generate_models(schema_path: Path) -> dict[str, type]:
 
         update_model = make_partial_model(create_model_cls, f"{class_name}Update")
 
-        read_model = type(class_name, (base_model, read_extra_cls), {"__module__": "wbforms.codegen"})
+        # The read model is lenient: required fields are loosened to `T | None = None`
+        # so partial items (missing mandatory values) can still be loaded into the form.
+        # Requiredness stays enforced on the Create model.
+        lenient_overrides = {
+            name: make_field_optional(finfo) for name, finfo in base_model.model_fields.items() if finfo.is_required()
+        }
+        read_model = create_model(
+            class_name,
+            __base__=(base_model, read_extra_cls),
+            __module__="wbforms.codegen",
+            **lenient_overrides,
+        )
 
         models[f"{class_name}Base"] = base_model
         models[f"{class_name}Create"] = create_model_cls

@@ -39,7 +39,7 @@ class ItemBase(_EmptyStringsMixin):
             pattern=r"Q\d+",
             json_schema_extra={WIKIBASE_ID: "rdf:subject"},
         ),
-    ]
+    ] = None
 
 
 class EntityBase(_EmptyStringsMixin):

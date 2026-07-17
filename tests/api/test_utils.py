@@ -1,9 +1,10 @@
 import unittest
 
 from fastapi import HTTPException, status
+from wikibaseintegrator import WikibaseIntegrator
 from wikibaseintegrator.entities import ItemEntity
 
-from wbforms.api.utils import get_model_label, handle_statement_update
+from wbforms.api.utils import get_model_label, handle_get_item_by_id, handle_statement_update
 from wbforms.codegen import ScholarSignature, SubjectBase, get_models
 from wbforms.wbgenerator import create_qualified_statement_from_model
 
@@ -43,6 +44,18 @@ class TestUtils(unittest.TestCase):
         self.assertEqual("scholar signature", get_model_label(ScholarSignature))
 
         self.assertEqual("subject", get_model_label(SubjectBase))
+
+    def test_get_item_missing_required_fields_returns_model(self):
+        """A partial item (missing mandatory fields) loads into the read model instead of failing."""
+        models = get_models()
+        item = WikibaseIntegrator().item.new()
+        item.id = "Q1"
+        item.labels.set("en", "Partial paper")
+
+        model = handle_get_item_by_id(wikibase=_FakeWikibase(item), item_id="Q1", target_model=models["Paper"])
+        self.assertEqual(model.label, "Partial paper")
+        self.assertIsNone(model.published_in)
+        self.assertIsNone(model.full_work_available_at_url)
 
     def test_update_missing_statement_returns_404(self):
         """A statement_id absent from the item with no content match yields a 404 (not a 500)."""

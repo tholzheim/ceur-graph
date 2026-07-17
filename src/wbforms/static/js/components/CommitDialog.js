@@ -13,11 +13,20 @@ export default {
   },
   emits: ["close", "saved"],
   setup(props, { emit }) {
-    const { computed, ref } = Vue;
+    const { computed, ref, watch } = Vue;
     const { t } = useI18n();
 
     const loading = ref(false);
     const error = ref("");
+    const ackIncomplete = ref(false);
+
+    // A fresh review starts unacknowledged, even if the dialog was confirmed before.
+    watch(
+      () => props.open,
+      () => {
+        ackIncomplete.value = false;
+      },
+    );
 
     function toComparableString(value) {
       if (value == null) return null;
@@ -137,6 +146,49 @@ export default {
         sourceChanges.value.length > 0,
     );
 
+    function isEmptyValue(v) {
+      // List inputs keep "" placeholder rows; the backend strips those, so a list
+      // of only empty strings counts as empty here too.
+      if (Array.isArray(v)) return v.every((x) => x == null || x === "");
+      return v == null || v === "";
+    }
+
+    // Mandatory fields that would stay empty after this write. Writes the backend
+    // would reject anyway (create / statement add, both validated against the strict
+    // Create models) block the commit; writes it would accept silently (update /
+    // statement edit) only warn and need an explicit acknowledgment.
+    const missingRequired = computed(() => {
+      const blocking = [];
+      const warnable = [];
+      for (const f of props.entityConfig?.fields ?? []) {
+        if (!f.required || f.field_type === "statement_list") continue;
+        if (!isEmptyValue(props.pendingData?.[f.name])) continue;
+        (props.isNew ? blocking : warnable).push(f.label);
+      }
+      for (const [, { ops, field }] of Object.entries(
+        props.pendingStatements,
+      )) {
+        for (const op of ops) {
+          if (op.type === "delete") continue;
+          for (const sf of field.statement_fields ?? []) {
+            if (!sf.required || !isEmptyValue(op.data?.[sf.name])) continue;
+            const label = `${field.label} › ${sf.label}`;
+            const target = op.type === "add" ? blocking : warnable;
+            if (!target.includes(label)) target.push(label);
+          }
+        }
+      }
+      return { blocking, warnable };
+    });
+    const blockingMissing = computed(() => missingRequired.value.blocking);
+    const warnableMissing = computed(() => missingRequired.value.warnable);
+    const canConfirm = computed(
+      () =>
+        hasChanges.value &&
+        blockingMissing.value.length === 0 &&
+        (warnableMissing.value.length === 0 || ackIncomplete.value),
+    );
+
     function formatOpDisplay(op) {
       if (op.type === "delete") return "—";
       return Object.entries(op.data || {})
@@ -165,6 +217,7 @@ export default {
     }
 
     async function confirm() {
+      if (!canConfirm.value) return;
       loading.value = true;
       error.value = "";
       try {
@@ -267,6 +320,10 @@ export default {
       statementChanges,
       sourceChanges,
       hasChanges,
+      blockingMissing,
+      warnableMissing,
+      ackIncomplete,
+      canConfirm,
       formatOpDisplay,
       opLabel,
       opIcon,
@@ -286,6 +343,17 @@ export default {
         </header>
 
         <div v-if="error" class="error-banner">{{ error }}</div>
+
+        <div v-if="hasChanges && blockingMissing.length" class="error-banner">
+          {{ t('commit_missing_required_block', { fields: blockingMissing.join(', ') }) }}
+        </div>
+        <div v-if="hasChanges && warnableMissing.length" class="warning-banner">
+          <p>{{ t('commit_missing_required', { fields: warnableMissing.join(', ') }) }}</p>
+          <label>
+            <input type="checkbox" v-model="ackIncomplete" />
+            {{ t('commit_incomplete_ack') }}
+          </label>
+        </div>
 
         <p v-if="!hasChanges"><em>{{ t('commit_no_changes') }}</em></p>
         <template v-else>
@@ -341,7 +409,7 @@ export default {
 
         <footer>
           <button class="secondary outline" @click="close">{{ t('commit_cancel') }}</button>
-          <button @click="confirm" :aria-busy="loading" :disabled="!hasChanges">
+          <button @click="confirm" :aria-busy="loading" :disabled="!canConfirm">
             {{ t('commit_confirm') }}
           </button>
         </footer>

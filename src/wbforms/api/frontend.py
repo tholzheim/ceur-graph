@@ -29,18 +29,14 @@ def _wikibase_type(field_info) -> str | None:
     return extra.get(WIKIBASE_TYPE)
 
 
-def _is_required(field_info) -> bool:
-    from pydantic_core import PydanticUndefinedType
-
-    return (
-        not isinstance(field_info.default, PydanticUndefinedType)
-        and field_info.default is ...
-        or (field_info.default is ... and field_info.default_factory is None)
-    )
-
-
 def _label(name: str) -> str:
     return name.replace("_", " ").title()
+
+
+def _strict_variant(cls: type, all_models: dict) -> type:
+    """Resolve a lenient read model to its strict Create variant so the form
+    metadata reports the schema's requiredness, not the read model's leniency."""
+    return all_models.get(f"{cls.__name__}Create", cls)
 
 
 def _build_statement_fields(stmt_cls: type[StatementBase]) -> list[dict]:
@@ -104,18 +100,22 @@ def _build_entity_schema(
 ) -> dict:
     fields: list[dict] = []
 
-    # Always expose label and description as top-level text inputs
+    # Always expose label and description as top-level text inputs; requiredness follows
+    # the model (mandatory unless the schema declares the slot as optional).
     for meta_name, meta_label in [("label", "Label"), ("description", "Description")]:
-        if meta_name in model_cls.model_fields:
-            fields.append(
-                {
-                    "name": meta_name,
-                    "label": meta_label,
-                    "field_type": "single",
-                    "wikibase_type": "string",
-                    "required": True,
-                }
-            )
+        finfo = model_cls.model_fields.get(meta_name)
+        if finfo is None:
+            continue
+        term_field: dict = {
+            "name": meta_name,
+            "label": meta_label,
+            "field_type": "single",
+            "wikibase_type": "string",
+            "required": finfo.is_required(),
+        }
+        if finfo.description:
+            term_field["description"] = finfo.description
+        fields.append(term_field)
 
     for fname, finfo in model_cls.model_fields.items():
         if fname in _SKIP_FIELDS or fname in {"label", "description"}:
@@ -145,6 +145,8 @@ def _build_entity_schema(
                 None,
             )
             ref_cls = _reference_class_for(stmt_type)
+            if ref_cls is not None:
+                ref_cls = _strict_variant(ref_cls, all_models)
             fields.append(
                 {
                     "name": fname,
@@ -152,7 +154,7 @@ def _build_entity_schema(
                     "field_type": "statement_list",
                     "statement_model": stmt_name,
                     "statement_endpoint": stmt_endpoint["prefix"] if stmt_endpoint else None,
-                    "statement_fields": _build_statement_fields(stmt_type),
+                    "statement_fields": _build_statement_fields(_strict_variant(stmt_type, all_models)),
                     "enforce_unknown_stmt_name": bool(getattr(stmt_type, "_enforce_unknown_stmt_name", False)),
                     "supports_references": ref_cls is not None,
                     "reference_fields": _build_reference_fields(ref_cls) if ref_cls is not None else [],
@@ -175,7 +177,7 @@ def _build_entity_schema(
             ref_cls = _wikibase_reference_class(sources_field)
             if ref_cls is not None:
                 descriptor["supports_references"] = True
-                descriptor["reference_fields"] = _build_reference_fields(ref_cls)
+                descriptor["reference_fields"] = _build_reference_fields(_strict_variant(ref_cls, all_models))
         fields.append(descriptor)
 
     return {"name": entity_name, "fields": fields}
@@ -202,7 +204,9 @@ def get_schema_entities() -> list[dict]:
     result = []
     for ep in item_endpoints:
         model_name: str = ep["model"]
-        model_cls = all_models.get(model_name)
+        # Use the strict Create model so `required` reflects the schema; the read
+        # model is lenient (all fields optional) to allow loading partial items.
+        model_cls = all_models.get(f"{model_name}Create") or all_models.get(model_name)
         if model_cls is None:
             continue
         entity = _build_entity_schema(model_name, model_cls, all_models, endpoints)

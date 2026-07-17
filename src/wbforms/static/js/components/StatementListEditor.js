@@ -241,6 +241,33 @@ export default {
         delete body.sources;
       }
 
+      // New statements are validated against the strict Create model on commit, so an
+      // add-row missing a mandatory field would be rejected there anyway — surface it
+      // here instead. Edits of existing statements may stay incomplete (the commit
+      // dialog asks for confirmation).
+      const opType =
+        editingRow.value == null
+          ? "add"
+          : editingRow.value._id !== undefined
+            ? (pendingOps.value.find((op) => op._id === editingRow.value._id)
+                ?.type ?? "add")
+            : "edit";
+      if (opType === "add") {
+        const missing = props.field.statement_fields
+          .filter((f) => {
+            if (!f.required) return false;
+            const v = body[f.name];
+            return v == null || v === "" || (Array.isArray(v) && !v.length);
+          })
+          .map((f) => f.label);
+        if (missing.length) {
+          editorError.value = t("stmt_missing_required", {
+            fields: missing.join(", "),
+          });
+          return;
+        }
+      }
+
       if (editingRow.value) {
         if (editingRow.value._id !== undefined) {
           const idx = pendingOps.value.findIndex(
