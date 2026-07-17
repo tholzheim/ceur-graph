@@ -13,6 +13,7 @@ from wbforms.api.auth import login_user
 from wbforms.api.frontend import router as frontend_router
 from wbforms.api.oauth import router as oauth_router
 from wbforms.codegen import get_routers
+from wbforms.settings import log_effective_settings
 
 
 def _setup_logging() -> None:
@@ -34,6 +35,7 @@ def _setup_logging() -> None:
 
 
 _setup_logging()
+log_effective_settings()
 
 app = FastAPI()
 

@@ -47,6 +47,7 @@ class Wikibase(BaseModel):
     item_prefix: HttpUrl
     property_prefix: HttpUrl
     mediawiki_api_url: HttpUrl
+    mediawiki_rest_url: HttpUrl | None = None
     auth_config: WikibaseAuthorizationConfig | None = None
 
     @classmethod
@@ -241,15 +242,16 @@ class Wikibase(BaseModel):
                 )
             case WikibaseLoginTypes.USER_OAUTH2:
                 from wbforms.api.oauth_login import UserOAuth2
-                from wbforms.settings import get_settings
 
+                if self.mediawiki_rest_url is None:
+                    raise ValueError("mediawiki_rest_url must be configured for OAuth2 user login")
                 return UserOAuth2(
                     access_token=self.auth_config.access_token,
                     refresh_token=self.auth_config.refresh_token,
                     client_id=self.auth_config.client_id,
                     client_secret=self.auth_config.client_secret,
                     mediawiki_api_url=self.mediawiki_api_url.unicode_string(),
-                    mediawiki_rest_url=get_settings().wikibase_mediawiki_rest_url.unicode_string().rstrip("/"),
+                    mediawiki_rest_url=self.mediawiki_rest_url.unicode_string().rstrip("/"),
                 )
             case _:
                 return None

@@ -20,6 +20,7 @@ class WikibaseSession(Wikibase):
             item_prefix=settings.wikibase_item_prefix,
             property_prefix=settings.wikibase_property_prefix,
             mediawiki_api_url=settings.wikibase_mediawiki_api_url,
+            mediawiki_rest_url=settings.wikibase_mediawiki_rest_url,
             auth_config=auth_config,
         )
 
