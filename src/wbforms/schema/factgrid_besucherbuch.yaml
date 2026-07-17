@@ -1,0 +1,370 @@
+id: https://database.factgrid.de/schema/besucherbuch
+name: Besucherbuch
+description: Schema for Besucherbuch entities with Wikibase property mappings
+
+prefixes:
+  linkml: https://w3id.org/linkml/
+
+default_range: string
+
+imports:
+  - linkml:types
+
+types:
+  anyuri:
+    uri: xsd:anyURI
+    base: str
+  item_statement_subject:
+    uri: xsd:string
+    base: str
+    description: "QID (Q\\d+) or Wikibase somevalue sentinel"
+
+slots:
+  # Term slot: controls requiredness of the description inherited from EntityBase.
+  # No wikibase_id — the mapping is fixed to schema:description.
+  description:
+    range: string
+    required: false
+    description: Short description of the entry; may be absent on existing items
+    local_names:
+      en:
+        local_name_value: "Description"
+      de:
+        local_name_value: "Beschreibung"
+  family_name:
+    range: string
+    local_names:
+      en:
+        local_name_value: "Family name"
+      de:
+        local_name_value: "Nachname"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/direct/P247"
+      wikibase_type: item
+  given_name:
+    range: string
+    multivalued: true
+    local_names:
+      en:
+        local_name_value: "Given name(s)"
+      de:
+        local_name_value: "Vorname"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/direct/P248"
+      wikibase_type: item
+  date_of_birth:
+    range: string
+    local_names:
+      en:
+        local_name_value: "Date of Birth"
+      de:
+        local_name_value: "Geburtsdatum"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/direct/P77"
+      wikibase_type: time
+  date_of_death:
+    range: string
+    local_names:
+      en:
+        local_name_value: "Date of Death"
+      de:
+        local_name_value: "Sterbedatum"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/direct/P38"
+      wikibase_type: time
+  place_of_birth:
+    range: string
+    local_names:
+      en:
+        local_name_value: "Place of Birth"
+      de:
+        local_name_value: "Geburtsort"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/direct/P82"
+      wikibase_type: item
+  place_of_death:
+    range: string
+    local_names:
+      en:
+        local_name_value: "Place of Death"
+      de:
+        local_name_value: "Sterbeort"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/direct/P168"
+      wikibase_type: item
+  career_statement:
+    range: string
+    multivalued: true
+    local_names:
+      en:
+        local_name_value: "Career statement"
+      de:
+        local_name_value: "Beruf"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/direct/P165"
+      wikibase_type: item
+  online_information:
+    range: anyuri
+    local_names:
+      en:
+        local_name_value: "Online Information"
+      de:
+        local_name_value: "Online-Informationen"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/direct/P146"
+      wikibase_type: url
+  work_location:
+    range: string
+    local_names:
+      en:
+        local_name_value: "Work location"
+      de:
+        local_name_value: "Arbeitsort"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/direct/P1372"
+      wikibase_type: item
+  research_project_reference:
+    range: string
+    multivalued: true
+    local_names:
+      en:
+        local_name_value: "Research projects that contributed to this data set"
+      de:
+        local_name_value: "Forschungsprojekte, die zu diesem Datensatz beigetragen haben"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/direct/P131"
+      wikibase_type: item
+  note:
+    range: string
+    local_names:
+      en:
+        local_name_value: "Note"
+      de:
+        local_name_value: "Bemerkung"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/direct/P73"
+      wikibase_type: string
+  notate:
+    range: anyuri
+    local_names:
+      en:
+        local_name_value: "Note (Notate)"
+      de:
+        local_name_value: "Bemerkung (Notate)"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/direct/P817"
+      wikibase_type: url
+  biographical_notes:
+    range: string
+    local_names:
+      en:
+        local_name_value: "Biographical Notes"
+      de:
+        local_name_value: "Biographische Anmerkung"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/direct/P173"
+      wikibase_type: string
+  gnd_id:
+    range: string
+    local_names:
+      en:
+        local_name_value: "GND-ID"
+      de:
+        local_name_value: "GND-ID"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/direct/P76"
+      wikibase_type: external-id
+
+  station_id:
+    range: item_statement_subject
+    annotations:
+      wikibase_id: "https://ceur-dev.wikibase.cloud/prop/statement/P296"
+      wikibase_type: item
+
+  # Qualifier
+  begin_date:
+    range: string
+    local_names:
+      en:
+        local_name_value: "Begin Date"
+      de:
+        local_name_value: "Anfangszeitpunkt"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/qualifier/P49"
+      wikibase_type: time
+  end_date:
+    range: string
+    local_names:
+      en:
+        local_name_value: "End Date"
+      de:
+        local_name_value: "Endzeitpunkt"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/qualifier/P50"
+      wikibase_type: time
+  primary_source:
+    range: string
+    local_names:
+      en:
+        local_name_value: "Primary Source"
+      de:
+        local_name_value: "Primärquelle"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/qualifier/P51"
+      wikibase_type: item
+  page:
+    range: string
+    local_names:
+      en:
+        local_name_value: "Page(s)"
+      de:
+        local_name_value: "Seiten"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/qualifier/P54"
+      wikibase_type: string
+  online_digistation:
+    range: anyuri
+    local_names:
+      en:
+        local_name_value: "Online digistation"
+      de:
+        local_name_value: "Online Digitalisat"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/qualifier/P138"
+      wikibase_type: url
+  literal_statement:
+    range: string
+    local_names:
+      en:
+        local_name_value: "Literal statement"
+      de:
+        local_name_value: "Wörtliche Aussage"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/qualifier/P35"
+      wikibase_type: string
+
+  # Statement-reference slots (range is a schema class, no Wikibase annotations)
+  stay_in:
+    range: StayIn
+    multivalued: true
+    inlined_as_list: true
+    local_names:
+      en:
+        local_name_value: "Stay in"
+      de:
+        local_name_value: "Aufenthalt in"
+
+  # Wikibase statement-level reference slots (path segment: /reference/Pxx)
+  ref_begin_date:
+    range: string
+    local_names:
+      en:
+        local_name_value: "Begin Date"
+      de:
+        local_name_value: "Anfangszeitpunkt"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/reference/P49"
+      wikibase_type: time
+  ref_end_date:
+    range: string
+    local_names:
+      en:
+        local_name_value: "End Date"
+      de:
+        local_name_value: "Endzeitpunkt"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/reference/P50"
+      wikibase_type: time
+  ref_primary_source:
+    range: string
+    local_names:
+      en:
+        local_name_value: "Primary Source"
+      de:
+        local_name_value: "Primärquelle"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/reference/P51"
+      wikibase_type: item
+  ref_page:
+    range: string
+    local_names:
+      en:
+        local_name_value: "Page(s)"
+      de:
+        local_name_value: "Seiten"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/reference/P54"
+      wikibase_type: string
+  ref_online_digistation:
+    range: anyuri
+    local_names:
+      en:
+        local_name_value: "Online digistation"
+      de:
+        local_name_value: "Online Digitalisat"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/reference/P138"
+      wikibase_type: url
+  ref_literal_statement:
+    range: string
+    local_names:
+      en:
+        local_name_value: "Literal statement"
+      de:
+        local_name_value: "Wörtliche Aussage"
+    annotations:
+      wikibase_id: "https://database.factgrid.de/prop/reference/P35"
+      wikibase_type: string
+
+classes:
+  Besucherbuch:
+    annotations:
+      python_base: entity_item
+    slots:
+      - description
+      - family_name
+      - given_name
+      - date_of_birth
+      - date_of_death
+      - place_of_birth
+      - place_of_death
+      - stay_in
+      - career_statement
+      - online_information
+      - work_location
+      - research_project_reference
+      - note
+      - notate
+      - biographical_notes
+      - gnd_id
+    slot_usage:
+      stay_in:
+        annotations:
+          supports_references: true
+
+  StayIn:
+    annotations:
+      python_base: extracted_statement
+      model_title: StayIn
+      enforce_unknown_stmt_name: true
+      supports_references: true
+    slots:
+      - station_id
+      - begin_date
+      - end_date
+      - primary_source
+      - page
+      - online_digistation
+      - literal_statement
+
+  WikibaseReference:
+    description: A Wikibase statement-level reference block (group of snaks documenting provenance).
+    annotations:
+      python_base: wikibase_reference
+    slots:
+      - ref_begin_date
+      - ref_end_date
+      - ref_primary_source
+      - ref_page
+      - ref_online_digistation
+      - ref_literal_statement
