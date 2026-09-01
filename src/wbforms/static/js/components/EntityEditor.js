@@ -116,6 +116,9 @@ export default {
           if (f.supports_references) {
             pendingData[`${f.name}_sources`] = [];
           }
+          if (f.calendar_field) {
+            pendingData[f.calendar_field] = f.field_type === "list" ? [] : "";
+          }
         });
       }
       loadError.value = "";
@@ -154,6 +157,10 @@ export default {
         if (f.supports_references) {
           pendingData[`${f.name}_sources`] = data[`${f.name}_sources`] ?? [];
         }
+        if (f.calendar_field) {
+          pendingData[f.calendar_field] =
+            data[f.calendar_field] ?? (f.field_type === "list" ? [] : "");
+        }
       });
     }
 
@@ -185,6 +192,11 @@ export default {
       if (selectedEntityName.value) {
         pushFormUrl(selectedEntityName.value.toLowerCase(), "new");
       }
+    }
+
+    function setCalendar(field, value) {
+      if (!field.calendar_field) return;
+      pendingData[field.calendar_field] = value;
     }
 
     function onPendingChange(fieldName, ops, fieldConfig) {
@@ -255,6 +267,7 @@ export default {
       hasChanges,
       load,
       startNew,
+      setCalendar,
       onSaved,
       logout,
       pendingStatements,
@@ -330,11 +343,15 @@ export default {
                   </label>
                   <field-input v-if="!f.supports_references"
                                :field="f"
-                               v-model="pendingData[f.name]" />
+                               v-model="pendingData[f.name]"
+                               :calendar="f.calendar_field ? pendingData[f.calendar_field] : null"
+                               @update:calendar="setCalendar(f, $event)" />
                   <field-input v-else
                                :field="f"
                                v-model="pendingData[f.name]"
-                               v-model:sources="pendingData[f.name + '_sources']" />
+                               v-model:sources="pendingData[f.name + '_sources']"
+                               :calendar="f.calendar_field ? pendingData[f.calendar_field] : null"
+                               @update:calendar="setCalendar(f, $event)" />
                 </div>
               </div>
             </div>

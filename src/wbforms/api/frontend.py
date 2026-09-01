@@ -7,10 +7,20 @@ import httpx
 from fastapi import APIRouter, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from wikibaseintegrator import datatypes
 
+from wbforms.calendar import DEFAULT_CALENDAR_MODEL, calendar_model_options
 from wbforms.codegen import get_models
 from wbforms.codegen.endpoints import derive_endpoints
-from wbforms.datamodel.item import WIKIBASE_ID, WIKIBASE_TYPE, StatementBase, WikibaseReferenceBase
+from wbforms.datamodel.item import (
+    CALENDAR_FIELD_SUFFIX,
+    CALENDAR_MODEL,
+    WIKIBASE_ID,
+    WIKIBASE_TYPE,
+    StatementBase,
+    WikibaseReferenceBase,
+    calendar_field_name,
+)
 from wbforms.settings import get_settings
 from wbforms.wbgenerator import _is_list_annotation, _wikibase_reference_class, get_statement_field_type
 
@@ -33,6 +43,25 @@ def _label(name: str) -> str:
     return name.replace("_", " ").title()
 
 
+def _add_calendar_metadata(descriptor: dict, owner_cls: type[BaseModel], fname: str, finfo) -> dict:
+    """Attach calendar-selector metadata to a `time` field descriptor.
+
+    `calendar_field` names the sibling model field the selector binds to and
+    `default_calendar_model` is the schema-declared default, which the form uses to
+    flag values stored in a different calendar.
+    """
+    if _wikibase_type(finfo) != datatypes.Time.DTYPE:
+        return descriptor
+    sibling = calendar_field_name(fname)
+    if sibling not in owner_cls.model_fields:
+        return descriptor
+    extra = finfo.json_schema_extra if isinstance(finfo.json_schema_extra, dict) else {}
+    descriptor["calendar_field"] = sibling
+    descriptor["default_calendar_model"] = extra.get(CALENDAR_MODEL) or DEFAULT_CALENDAR_MODEL
+    descriptor["calendar_options"] = calendar_model_options()
+    return descriptor
+
+
 def _strict_variant(cls: type, all_models: dict) -> type:
     """Resolve a lenient read model to its strict Create variant so the form
     metadata reports the schema's requiredness, not the read model's leniency."""
@@ -45,6 +74,9 @@ def _build_statement_fields(stmt_cls: type[StatementBase]) -> list[dict]:
     for fname, finfo in stmt_cls.model_fields.items():
         if fname in _SKIP_FIELDS:
             continue
+        # `<X>_calendar` companions are rendered alongside their base field, not as separate inputs.
+        if fname.endswith(CALENDAR_FIELD_SUFFIX):
+            continue
         extra = finfo.json_schema_extra if isinstance(finfo.json_schema_extra, dict) else {}
         wb_id = extra.get(WIKIBASE_ID, "")
         if wb_id in _INTERNAL_WB_IDS:
@@ -56,6 +88,7 @@ def _build_statement_fields(stmt_cls: type[StatementBase]) -> list[dict]:
             "field_type": "list" if _is_list_annotation(finfo.annotation) else "single",
             "required": finfo.is_required(),
         }
+        _add_calendar_metadata(entry, stmt_cls, fname, finfo)
         if fname == subject_field_name:
             entry["is_subject"] = True
         if fname == "object_named_as":
@@ -81,13 +114,18 @@ def _build_reference_fields(ref_cls: type[WikibaseReferenceBase]) -> list[dict]:
     for fname in ref_cls.get_reference_fields(WIKIBASE_ID):
         finfo = ref_cls.model_fields[fname]
         fields.append(
-            {
-                "name": fname,
-                "label": _label(fname),
-                "wikibase_type": _wikibase_type(finfo),
-                "field_type": "list" if _is_list_annotation(finfo.annotation) else "single",
-                "required": finfo.is_required(),
-            }
+            _add_calendar_metadata(
+                {
+                    "name": fname,
+                    "label": _label(fname),
+                    "wikibase_type": _wikibase_type(finfo),
+                    "field_type": "list" if _is_list_annotation(finfo.annotation) else "single",
+                    "required": finfo.is_required(),
+                },
+                ref_cls,
+                fname,
+                finfo,
+            )
         )
     return fields
 
@@ -120,8 +158,9 @@ def _build_entity_schema(
     for fname, finfo in model_cls.model_fields.items():
         if fname in _SKIP_FIELDS or fname in {"label", "description"}:
             continue
-        # `<X>_sources` companions are rendered alongside their base field, not as separate inputs.
-        if fname.endswith("_sources"):
+        # `<X>_sources` / `<X>_calendar` companions are rendered alongside their base
+        # field, not as separate inputs.
+        if fname.endswith("_sources") or fname.endswith(CALENDAR_FIELD_SUFFIX):
             continue
 
         extra = finfo.json_schema_extra if isinstance(finfo.json_schema_extra, dict) else {}
@@ -172,6 +211,7 @@ def _build_entity_schema(
             "wikibase_type": _wikibase_type(finfo),
             "required": finfo.is_required(),
         }
+        _add_calendar_metadata(descriptor, model_cls, fname, finfo)
         sources_field = model_cls.model_fields.get(f"{fname}_sources")
         if sources_field is not None:
             ref_cls = _wikibase_reference_class(sources_field)
